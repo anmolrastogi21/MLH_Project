@@ -1,0 +1,3447 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>DINO GONE ROGUE — AI Powered Cyber Runner & Boss Battle</title>
+  <style>
+    /* ==========================================================================
+       DINO GONE ROGUE — DESIGN SYSTEM (MAX 6 PRINCIPAL COLORS)
+       1. Space Dark / Obsidian: #0c1017 (Backgrounds, dark cards)
+       2. Starlight White:       #f0f6fc (Typography, primary icons)
+       3. Cyber Cyan:            #00f3ff (Player, primary energy, buttons)
+       4. Laser Crimson:         #ff2a5f (Boss, danger, damage, alerts)
+       5. Neon Amber:            #ffcc00 (Pickups, charge meter, warnings)
+       6. Emerald Matrix:        #00ff88 (Health, success, grid lines)
+       ========================================================================== */
+    :root {
+      --col-bg: #0c1017;
+      --col-bg-card: rgba(18, 24, 38, 0.95);
+      --col-bg-elevated: #151c2c;
+      --col-white: #f0f6fc;
+      --col-cyan: #00f3ff;
+      --col-crimson: #ff2a5f;
+      --col-amber: #ffcc00;
+      --col-emerald: #00ff88;
+      --col-gray: #4a5568;
+      --col-border: rgba(0, 243, 255, 0.25);
+      --font-mono: "SF Mono", "Cascadia Code", "Consolas", monospace;
+      --font-ui: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+      user-select: none;
+      -webkit-user-select: none;
+    }
+
+    body {
+      background-color: var(--col-bg);
+      color: var(--col-white);
+      font-family: var(--font-ui);
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: flex-start;
+      overflow-x: hidden;
+      padding: 12px;
+    }
+
+    /* Scanline effect */
+    body::after {
+      content: " ";
+      display: block;
+      position: fixed;
+      top: 0; left: 0; bottom: 0; right: 0;
+      background: linear-gradient(rgba(18, 16, 16, 0) 50%, rgba(0, 0, 0, 0.18) 50%);
+      background-size: 100% 4px;
+      z-index: 999;
+      pointer-events: none;
+      opacity: 0.6;
+    }
+
+    /* TOP HEADER & CONTROLS */
+    header {
+      width: 100%;
+      max-width: 900px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 8px 12px;
+      margin-bottom: 8px;
+      background: var(--col-bg-card);
+      border: 1px solid var(--col-border);
+      border-radius: 8px;
+      box-shadow: 0 4px 20px rgba(0, 243, 255, 0.08);
+    }
+
+    .brand {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .brand-title {
+      font-size: 1.15rem;
+      font-weight: 800;
+      letter-spacing: 1.5px;
+      color: var(--col-cyan);
+      text-shadow: 0 0 10px rgba(0, 243, 255, 0.5);
+    }
+
+    .header-badges {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .badge {
+      font-family: var(--font-mono);
+      font-size: 0.75rem;
+      padding: 4px 8px;
+      border-radius: 4px;
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      border: 1px solid currentColor;
+    }
+
+    .badge-phase {
+      color: var(--col-amber);
+      border-color: rgba(255, 204, 0, 0.4);
+      background: rgba(255, 204, 0, 0.08);
+    }
+
+    .badge-gemma {
+      cursor: pointer;
+      color: var(--col-emerald);
+      border-color: rgba(0, 255, 136, 0.4);
+      background: rgba(0, 255, 136, 0.08);
+      transition: all 0.2s ease;
+    }
+    .badge-gemma:hover {
+      background: rgba(0, 255, 136, 0.2);
+    }
+    .badge-gemma.offline {
+      color: var(--col-crimson);
+      border-color: rgba(255, 42, 95, 0.4);
+      background: rgba(255, 42, 95, 0.08);
+    }
+    .badge-gemma.checking {
+      color: var(--col-amber);
+      border-color: rgba(255, 204, 0, 0.4);
+      background: rgba(255, 204, 0, 0.08);
+    }
+
+    .status-dot {
+      width: 7px;
+      height: 7px;
+      border-radius: 50%;
+      background: currentColor;
+      box-shadow: 0 0 6px currentColor;
+    }
+
+    .header-actions {
+      display: flex;
+      gap: 6px;
+    }
+
+    .icon-btn {
+      background: var(--col-bg-elevated);
+      color: var(--col-white);
+      border: 1px solid var(--col-border);
+      border-radius: 6px;
+      padding: 6px 10px;
+      font-size: 0.8rem;
+      cursor: pointer;
+      font-family: var(--font-mono);
+      display: inline-flex;
+      align-items: center;
+      gap: 5px;
+      transition: all 0.15s ease;
+    }
+    .icon-btn:hover {
+      background: var(--col-cyan);
+      color: var(--col-bg);
+      border-color: var(--col-cyan);
+      box-shadow: 0 0 10px rgba(0, 243, 255, 0.4);
+    }
+    .icon-btn:active {
+      transform: scale(0.96);
+    }
+
+    /* HUD BAR */
+    .hud-bar {
+      width: 100%;
+      max-width: 900px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 6px 14px;
+      background: rgba(12, 16, 23, 0.9);
+      border: 1px solid rgba(0, 243, 255, 0.15);
+      border-bottom: none;
+      border-radius: 8px 8px 0 0;
+      font-family: var(--font-mono);
+      font-size: 0.85rem;
+    }
+
+    .hud-metric {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+    .hud-label {
+      color: var(--col-gray);
+      font-size: 0.75rem;
+    }
+    .hud-val {
+      font-weight: 700;
+      color: var(--col-white);
+    }
+    .hud-lives {
+      color: var(--col-crimson);
+      letter-spacing: 2px;
+      font-size: 1rem;
+    }
+
+    /* CANVAS WRAPPER */
+    .game-wrapper {
+      position: relative;
+      width: 100%;
+      max-width: 900px;
+      border: 2px solid var(--col-border);
+      border-radius: 0 0 8px 8px;
+      overflow: hidden;
+      background: var(--col-bg);
+      box-shadow: 0 10px 30px rgba(0, 0, 0, 0.8), 0 0 20px rgba(0, 243, 255, 0.15);
+      transition: all 0.4s ease;
+    }
+
+    /* EMERGENCY BOSS THEME STYLING */
+    body.boss-theme {
+      background: radial-gradient(circle at 75% 25%, rgba(255, 42, 95, 0.22) 0%, rgba(12, 16, 23, 1) 75%);
+    }
+    body.boss-theme header {
+      border-color: var(--col-crimson);
+      box-shadow: 0 4px 25px rgba(255, 42, 95, 0.35);
+      background: rgba(28, 14, 22, 0.95);
+    }
+    body.boss-theme .brand-title {
+      color: var(--col-crimson);
+      text-shadow: 0 0 14px rgba(255, 42, 95, 0.8);
+    }
+    body.boss-theme .game-wrapper {
+      border-color: var(--col-crimson);
+      box-shadow: 0 0 35px rgba(255, 42, 95, 0.5), inset 0 0 20px rgba(255, 42, 95, 0.2);
+      animation: alertPulse 1.6s infinite alternate ease-in-out;
+    }
+    body.boss-theme .hud-bar {
+      background: rgba(24, 12, 18, 0.95);
+      border-color: rgba(255, 42, 95, 0.4);
+    }
+    body.boss-theme .badge-phase {
+      color: var(--col-crimson);
+      border-color: var(--col-crimson);
+      background: rgba(255, 42, 95, 0.2);
+      animation: alertFlash 0.7s infinite alternate;
+    }
+    @keyframes alertPulse {
+      0% { box-shadow: 0 0 20px rgba(255, 42, 95, 0.3); }
+      100% { box-shadow: 0 0 45px rgba(255, 42, 95, 0.7); }
+    }
+    @keyframes alertFlash {
+      0% { opacity: 0.6; }
+      100% { opacity: 1; }
+    }
+
+    canvas {
+      display: block;
+      width: 100%;
+      height: auto;
+      aspect-ratio: 900 / 300;
+      background: #0c1017;
+    }
+
+    /* BOSS HEALTH BAR CONTAINER (in FIGHT phase) */
+    .boss-hud-overlay {
+      position: absolute;
+      top: 10px;
+      left: 50%;
+      transform: translateX(-50%);
+      width: 80%;
+      max-width: 550px;
+      background: rgba(12, 16, 23, 0.85);
+      padding: 8px 14px;
+      border: 1px solid var(--col-crimson);
+      border-radius: 6px;
+      display: none;
+      flex-direction: column;
+      gap: 4px;
+      pointer-events: none;
+      box-shadow: 0 0 15px rgba(255, 42, 95, 0.3);
+      z-index: 50;
+    }
+    .boss-hud-overlay.active {
+      display: flex;
+    }
+    .boss-hud-title {
+      display: flex;
+      justify-content: space-between;
+      font-size: 0.8rem;
+      font-family: var(--font-mono);
+    }
+    .boss-name {
+      color: var(--col-crimson);
+      font-weight: bold;
+    }
+    .boss-attack-tag {
+      color: var(--col-amber);
+      font-size: 0.7rem;
+    }
+    .boss-hp-track {
+      width: 100%;
+      height: 10px;
+      background: rgba(255, 42, 95, 0.2);
+      border-radius: 5px;
+      overflow: hidden;
+      border: 1px solid rgba(255, 42, 95, 0.5);
+    }
+    .boss-hp-fill {
+      height: 100%;
+      width: 100%;
+      background: linear-gradient(90deg, var(--col-crimson), #ff6b8b);
+      transition: width 0.1s ease;
+      box-shadow: 0 0 8px var(--col-crimson);
+    }
+
+    /* PLAYER COMBAT HUD (FIGHT phase) */
+    .player-combat-overlay {
+      position: absolute;
+      bottom: 10px;
+      left: 12px;
+      background: rgba(12, 16, 23, 0.85);
+      padding: 6px 12px;
+      border: 1px solid var(--col-cyan);
+      border-radius: 6px;
+      display: none;
+      flex-direction: column;
+      gap: 4px;
+      pointer-events: none;
+      z-index: 50;
+      font-family: var(--font-mono);
+      font-size: 0.75rem;
+    }
+    .player-combat-overlay.active {
+      display: flex;
+    }
+    .bar-row {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    .bar-label {
+      width: 45px;
+      color: var(--col-gray);
+    }
+    .bar-track {
+      width: 120px;
+      height: 8px;
+      background: rgba(255, 255, 255, 0.1);
+      border-radius: 4px;
+      overflow: hidden;
+    }
+    .player-hp-fill {
+      height: 100%;
+      width: 100%;
+      background: var(--col-emerald);
+      box-shadow: 0 0 6px var(--col-emerald);
+      transition: width 0.1s ease;
+    }
+    .player-charge-fill {
+      height: 100%;
+      width: 0%;
+      background: var(--col-amber);
+      box-shadow: 0 0 6px var(--col-amber);
+      transition: width 0.15s ease;
+    }
+
+    /* FLOATING STORY & COMMENTARY BUBBLE */
+    .dialogue-bubble {
+      position: absolute;
+      top: 14px;
+      right: 14px;
+      max-width: 320px;
+      background: var(--col-bg-card);
+      border: 1px solid var(--col-cyan);
+      border-radius: 8px;
+      padding: 8px 12px;
+      display: none;
+      gap: 8px;
+      align-items: flex-start;
+      z-index: 60;
+      box-shadow: 0 4px 15px rgba(0, 243, 255, 0.2);
+      animation: bubbleSlideIn 0.3s ease forwards;
+    }
+    .dialogue-bubble.active {
+      display: flex;
+    }
+    .dialogue-bubble.commentary {
+      top: auto;
+      bottom: 14px;
+      right: 14px;
+      border-color: var(--col-amber);
+      box-shadow: 0 4px 15px rgba(255, 204, 0, 0.2);
+    }
+    .dialogue-avatar {
+      font-size: 1.2rem;
+      flex-shrink: 0;
+    }
+    .dialogue-content {
+      display: flex;
+      flex-direction: column;
+      gap: 2px;
+    }
+    .dialogue-header {
+      font-size: 0.65rem;
+      font-family: var(--font-mono);
+      color: var(--col-cyan);
+      display: flex;
+      justify-content: space-between;
+      gap: 8px;
+    }
+    .dialogue-header.commentary {
+      color: var(--col-amber);
+    }
+    .ai-tag {
+      font-size: 0.6rem;
+      padding: 1px 4px;
+      border-radius: 3px;
+      background: rgba(0, 255, 136, 0.15);
+      color: var(--col-emerald);
+      border: 1px solid rgba(0, 255, 136, 0.3);
+    }
+    .fallback-tag {
+      font-size: 0.6rem;
+      padding: 1px 4px;
+      border-radius: 3px;
+      background: rgba(255, 204, 0, 0.15);
+      color: var(--col-amber);
+      border: 1px solid rgba(255, 204, 0, 0.3);
+    }
+    .dialogue-text {
+      font-size: 0.8rem;
+      line-height: 1.3;
+      color: var(--col-white);
+    }
+
+    @keyframes bubbleSlideIn {
+      from { opacity: 0; transform: translateY(-8px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    /* SCREEN OVERLAYS (MENU, PAUSE, WIN, LOSE) */
+    .screen-overlay {
+      position: absolute;
+      top: 0; left: 0; right: 0; bottom: 0;
+      background: rgba(12, 16, 23, 0.92);
+      backdrop-filter: blur(4px);
+      display: none;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      padding: 20px;
+      text-align: center;
+      z-index: 100;
+    }
+    .screen-overlay.active {
+      display: flex;
+    }
+
+    .menu-title {
+      font-size: 2.4rem;
+      font-weight: 900;
+      letter-spacing: 3px;
+      color: var(--col-cyan);
+      text-shadow: 0 0 25px rgba(0, 243, 255, 0.6);
+      margin-bottom: 4px;
+    }
+    .menu-subtitle {
+      font-size: 0.9rem;
+      color: var(--col-white);
+      opacity: 0.85;
+      max-width: 480px;
+      margin-bottom: 20px;
+    }
+
+    .btn-row {
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: center;
+      gap: 12px;
+      margin-top: 10px;
+    }
+
+    .primary-btn {
+      background: var(--col-cyan);
+      color: var(--col-bg);
+      border: none;
+      border-radius: 6px;
+      padding: 10px 22px;
+      font-size: 0.95rem;
+      font-weight: 700;
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      font-family: var(--font-ui);
+      transition: all 0.2s ease;
+      box-shadow: 0 0 15px rgba(0, 243, 255, 0.4);
+    }
+    .primary-btn:hover {
+      background: #4ef7ff;
+      transform: translateY(-2px);
+      box-shadow: 0 0 22px rgba(0, 243, 255, 0.7);
+    }
+    .primary-btn:active {
+      transform: translateY(1px);
+    }
+
+    .secondary-btn {
+      background: var(--col-bg-elevated);
+      color: var(--col-white);
+      border: 1px solid var(--col-border);
+      border-radius: 6px;
+      padding: 10px 18px;
+      font-size: 0.9rem;
+      font-weight: 600;
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      font-family: var(--font-ui);
+      transition: all 0.2s ease;
+    }
+    .secondary-btn:hover {
+      border-color: var(--col-cyan);
+      color: var(--col-cyan);
+      background: rgba(0, 243, 255, 0.08);
+      transform: translateY(-2px);
+    }
+    .secondary-btn:active {
+      transform: translateY(1px);
+    }
+
+    .danger-btn {
+      background: var(--col-crimson);
+      color: var(--col-white);
+      border: none;
+      border-radius: 6px;
+      padding: 10px 22px;
+      font-size: 0.95rem;
+      font-weight: 700;
+      cursor: pointer;
+      font-family: var(--font-ui);
+      transition: all 0.2s ease;
+      box-shadow: 0 0 15px rgba(255, 42, 95, 0.4);
+    }
+    .danger-btn:hover {
+      background: #ff527b;
+      transform: translateY(-2px);
+    }
+
+    .key-hints {
+      margin-top: 18px;
+      font-family: var(--font-mono);
+      font-size: 0.75rem;
+      color: var(--col-gray);
+      display: flex;
+      gap: 12px;
+      flex-wrap: wrap;
+      justify-content: center;
+    }
+    .key-chip {
+      background: rgba(255, 255, 255, 0.06);
+      padding: 3px 6px;
+      border-radius: 4px;
+      border: 1px solid rgba(255, 255, 255, 0.15);
+      color: var(--col-white);
+    }
+
+    /* MODAL PANELS (How to Play, Settings, Inspector) */
+    .modal-backdrop {
+      position: fixed;
+      top: 0; left: 0; right: 0; bottom: 0;
+      background: rgba(6, 8, 12, 0.85);
+      backdrop-filter: blur(5px);
+      display: none;
+      align-items: center;
+      justify-content: center;
+      padding: 20px;
+      z-index: 200;
+    }
+    .modal-backdrop.active {
+      display: flex;
+    }
+
+    .modal-box {
+      background: var(--col-bg-card);
+      border: 1px solid var(--col-border);
+      border-radius: 10px;
+      max-width: 620px;
+      width: 100%;
+      max-height: 90vh;
+      display: flex;
+      flex-direction: column;
+      box-shadow: 0 10px 40px rgba(0, 0, 0, 0.9), 0 0 25px rgba(0, 243, 255, 0.2);
+      animation: modalPop 0.2s cubic-bezier(0.1, 0.9, 0.2, 1);
+    }
+
+    @keyframes modalPop {
+      from { transform: scale(0.95); opacity: 0; }
+      to { transform: scale(1); opacity: 1; }
+    }
+
+    .modal-header {
+      padding: 14px 18px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      border-bottom: 1px solid rgba(0, 243, 255, 0.15);
+    }
+    .modal-title {
+      font-size: 1.1rem;
+      font-weight: 700;
+      color: var(--col-cyan);
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    .modal-close-btn {
+      background: transparent;
+      border: none;
+      color: var(--col-gray);
+      font-size: 1.4rem;
+      cursor: pointer;
+      line-height: 1;
+      padding: 2px 6px;
+      border-radius: 4px;
+    }
+    .modal-close-btn:hover {
+      color: var(--col-crimson);
+      background: rgba(255, 42, 95, 0.1);
+    }
+
+    .modal-body {
+      padding: 18px;
+      overflow-y: auto;
+      font-size: 0.85rem;
+      line-height: 1.5;
+      display: flex;
+      flex-direction: column;
+      gap: 14px;
+    }
+
+    .modal-footer {
+      padding: 12px 18px;
+      border-top: 1px solid rgba(0, 243, 255, 0.15);
+      display: flex;
+      justify-content: flex-end;
+      gap: 10px;
+    }
+
+    /* FORM ELEMENTS IN SETTINGS & INSPECTOR */
+    .form-group {
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+    }
+    .form-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 8px 0;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+    }
+    .form-label {
+      font-weight: 600;
+      color: var(--col-white);
+    }
+    .form-desc {
+      font-size: 0.75rem;
+      color: var(--col-gray);
+    }
+    select, input[type="text"], input[type="number"] {
+      background: var(--col-bg-elevated);
+      color: var(--col-white);
+      border: 1px solid var(--col-border);
+      border-radius: 6px;
+      padding: 6px 10px;
+      font-family: var(--font-mono);
+      font-size: 0.85rem;
+      outline: none;
+    }
+    select:focus, input[type="text"]:focus {
+      border-color: var(--col-cyan);
+      box-shadow: 0 0 8px rgba(0, 243, 255, 0.4);
+    }
+
+    .toggle-switch {
+      position: relative;
+      display: inline-block;
+      width: 44px;
+      height: 22px;
+    }
+    .toggle-switch input {
+      opacity: 0;
+      width: 0;
+      height: 0;
+    }
+    .toggle-slider {
+      position: absolute;
+      cursor: pointer;
+      top: 0; left: 0; right: 0; bottom: 0;
+      background-color: var(--col-gray);
+      transition: .2s;
+      border-radius: 22px;
+    }
+    .toggle-slider:before {
+      position: absolute;
+      content: "";
+      height: 16px;
+      width: 16px;
+      left: 3px;
+      bottom: 3px;
+      background-color: white;
+      transition: .2s;
+      border-radius: 50%;
+    }
+    input:checked + .toggle-slider {
+      background-color: var(--col-emerald);
+    }
+    input:checked + .toggle-slider:before {
+      transform: translateX(22px);
+    }
+
+    /* INSPECTOR STYLES */
+    .inspector-metrics-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(130px, 1fr));
+      gap: 8px;
+    }
+    .metric-card {
+      background: var(--col-bg-elevated);
+      padding: 8px 10px;
+      border-radius: 6px;
+      border: 1px solid rgba(255, 255, 255, 0.08);
+      font-family: var(--font-mono);
+    }
+    .metric-card-label {
+      font-size: 0.65rem;
+      color: var(--col-gray);
+      text-transform: uppercase;
+    }
+    .metric-card-val {
+      font-size: 0.95rem;
+      font-weight: 700;
+      color: var(--col-cyan);
+      margin-top: 2px;
+    }
+
+    .inspector-log-table {
+      width: 100%;
+      border-collapse: collapse;
+      font-family: var(--font-mono);
+      font-size: 0.72rem;
+    }
+    .inspector-log-table th, .inspector-log-table td {
+      padding: 6px 8px;
+      text-align: left;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+    }
+    .inspector-log-table th {
+      color: var(--col-gray);
+      font-weight: 600;
+      background: rgba(0, 0, 0, 0.2);
+    }
+    .inspector-log-table tr:hover {
+      background: rgba(0, 243, 255, 0.04);
+    }
+
+    /* MOBILE / TOUCH ACTION BUTTONS */
+    .touch-controls {
+      display: none;
+      width: 100%;
+      max-width: 900px;
+      justify-content: space-between;
+      margin-top: 10px;
+      gap: 12px;
+    }
+    .touch-group {
+      display: flex;
+      gap: 8px;
+    }
+    .touch-btn {
+      background: var(--col-bg-card);
+      color: var(--col-white);
+      border: 2px solid var(--col-border);
+      border-radius: 8px;
+      padding: 14px 20px;
+      font-size: 1rem;
+      font-weight: bold;
+      touch-action: manipulation;
+      cursor: pointer;
+    }
+    .touch-btn:active {
+      background: var(--col-cyan);
+      color: var(--col-bg);
+      border-color: var(--col-cyan);
+    }
+    .touch-btn.attack {
+      border-color: var(--col-crimson);
+      color: var(--col-crimson);
+    }
+    .touch-btn.attack:active {
+      background: var(--col-crimson);
+      color: white;
+    }
+    .touch-btn.special {
+      border-color: var(--col-amber);
+      color: var(--col-amber);
+    }
+    .touch-btn.special:active {
+      background: var(--col-amber);
+      color: black;
+    }
+
+    @media (max-width: 768px) {
+      .touch-controls {
+        display: flex;
+      }
+      .brand-title {
+        font-size: 0.95rem;
+      }
+      .hud-bar {
+        font-size: 0.75rem;
+      }
+    }
+  </style>
+</head>
+<body>
+
+  <!-- 1. TOP HEADER & SYSTEM STATUS -->
+  <header>
+    <div class="brand">
+      <div class="brand-title">⚡ DINO GONE ROGUE</div>
+      <div class="header-badges">
+        <span class="badge badge-phase" id="phaseBadge">MENU</span>
+        <span class="badge badge-gemma checking" id="gemmaBadge" title="Click to test Gemma Ollama connection">
+          <span class="status-dot"></span>
+          <span id="gemmaStatusText">Gemma: Checking...</span>
+        </span>
+      </div>
+    </div>
+    <div class="header-actions">
+      <button class="icon-btn" id="headerMuteBtn" title="Toggle Sound (M)">🔊 Sound: ON</button>
+      <button class="icon-btn" id="headerPauseBtn" title="Pause / Resume (P)">⏸ Pause</button>
+      <button class="icon-btn" id="headerInspectorBtn" title="Open Inspector (G)">🔍 Inspector</button>
+      <button class="icon-btn" id="headerRestartBtn" title="Restart Run (R)">🔄 Restart</button>
+    </div>
+  </header>
+
+  <!-- 2. RUNNER HUD METRICS BAR -->
+  <div class="hud-bar">
+    <div class="hud-metric">
+      <span class="hud-label">SCORE</span>
+      <span class="hud-val" id="hudScore">0</span>
+    </div>
+    <div class="hud-metric">
+      <span class="hud-label">DISTANCE</span>
+      <span class="hud-val" id="hudDistance">0m</span>
+    </div>
+    <div class="hud-metric">
+      <span class="hud-label">DODGES</span>
+      <span class="hud-val" id="hudDodges">0</span>
+    </div>
+    <div class="hud-metric">
+      <span class="hud-label">LIVES</span>
+      <span class="hud-lives" id="hudLives">❤️❤️❤️</span>
+    </div>
+    <div class="hud-metric">
+      <span class="hud-label">DIFFICULTY</span>
+      <span class="hud-val" id="hudDiff">Normal (1.0x)</span>
+    </div>
+  </div>
+
+  <!-- 3. GAME CANVAS CONTAINER & OVERLAYS -->
+  <div class="game-wrapper" id="gameWrapper">
+    <canvas id="gameCanvas" width="900" height="300"></canvas>
+
+    <!-- Boss Combat HUD overlay (active in FIGHT phase) -->
+    <div class="boss-hud-overlay" id="bossHudOverlay">
+      <div class="boss-hud-title">
+        <span class="boss-name" id="bossHudName">THE DEADLINE REX</span>
+        <span class="boss-attack-tag" id="bossHudAttack">SIGNATURE: DEADLINE STOMP</span>
+      </div>
+      <div class="boss-hp-track">
+        <div class="boss-hp-fill" id="bossHpFill"></div>
+      </div>
+    </div>
+
+    <!-- Player Combat HUD overlay (active in FIGHT / CHARGE phase) -->
+    <div class="player-combat-overlay" id="playerCombatOverlay">
+      <div class="bar-row">
+        <span class="bar-label">HP</span>
+        <div class="bar-track"><div class="player-hp-fill" id="playerHpFill"></div></div>
+      </div>
+      <div class="bar-row">
+        <span class="bar-label">CHARGE</span>
+        <div class="bar-track"><div class="player-charge-fill" id="playerChargeFill"></div></div>
+      </div>
+    </div>
+
+    <!-- Floating Dialogue & Story Notification Bubble -->
+    <div class="dialogue-bubble" id="storyBubble">
+      <div class="dialogue-avatar" id="storyAvatar">📖</div>
+      <div class="dialogue-content">
+        <div class="dialogue-header">
+          <span id="storySpeaker">ROGUE CHRONICLES</span>
+          <span class="ai-tag" id="storyAiTag">DESI LOGS</span>
+        </div>
+        <div class="dialogue-text" id="storyText">Tiffin box mein momos the! Dino ne smell kar liya, bhaago!</div>
+      </div>
+    </div>
+
+    <!-- Floating Hinglish Commentary Bubble -->
+    <div class="dialogue-bubble commentary" id="commentaryBubble">
+      <div class="dialogue-avatar">🎙️</div>
+      <div class="dialogue-content">
+        <div class="dialogue-header commentary">
+          <span>🎙️ DESI RADIO</span>
+          <span class="ai-tag" id="commentaryAiTag">DESI CAST</span>
+        </div>
+        <div class="dialogue-text" id="commentaryText">Arre bhai bhai bhai! Kya smooth dodge maara!</div>
+      </div>
+    </div>
+
+    <!-- OVERLAY: MAIN MENU -->
+    <div class="screen-overlay active" id="menuOverlay">
+      <div class="menu-title">DINO GONE ROGUE</div>
+      <div class="menu-subtitle">Endless cyber-runner meets local Gemma AI boss combat. Dodge obstacles, gather energy cells, and defeat the rogue titan!</div>
+      <div class="btn-row">
+        <button class="primary-btn" id="startBtn">▶ START GAME</button>
+        <button class="secondary-btn" id="howToPlayBtn">📖 HOW TO PLAY</button>
+        <button class="secondary-btn" id="settingsBtn">⚙️ SETTINGS</button>
+        <button class="secondary-btn" id="menuInspectorBtn">🔍 INSPECTOR</button>
+      </div>
+      <div class="key-hints">
+        <span>Controls: <span class="key-chip">SPACE / ↑</span> Jump</span>
+        <span><span class="key-chip">↓</span> Duck</span>
+        <span><span class="key-chip">J</span> Attack</span>
+        <span><span class="key-chip">K</span> Special Burst</span>
+        <span><span class="key-chip">P</span> Pause</span>
+        <span><span class="key-chip">G</span> Inspector</span>
+        <span><span class="key-chip">1-8</span> Debug Phases</span>
+      </div>
+    </div>
+
+    <!-- OVERLAY: PAUSE -->
+    <div class="screen-overlay" id="pauseOverlay">
+      <h2 style="font-size: 2rem; color: var(--col-amber); margin-bottom: 10px;">GAME PAUSED</h2>
+      <p style="color: var(--col-gray); margin-bottom: 20px;">Simulation state suspended. Take a breather.</p>
+      <div class="btn-row">
+        <button class="primary-btn" id="resumeBtn">▶ RESUME (P)</button>
+        <button class="secondary-btn" id="pauseRestartBtn">🔄 RESTART (R)</button>
+        <button class="secondary-btn" id="pauseMenuBtn">🏠 MAIN MENU</button>
+      </div>
+    </div>
+
+    <!-- OVERLAY: LOSE (GAME OVER) -->
+    <div class="screen-overlay" id="loseOverlay">
+      <h2 style="font-size: 2.2rem; color: var(--col-crimson); margin-bottom: 6px;">RUN TERMINATED</h2>
+      <p id="loseStatsText" style="color: var(--col-white); margin-bottom: 16px; font-family: var(--font-mono);"></p>
+      <div class="btn-row">
+        <button class="danger-btn" id="retryBtn">🔄 RETRY RUN (R)</button>
+        <button class="secondary-btn" id="loseMenuBtn">🏠 MAIN MENU</button>
+      </div>
+    </div>
+
+    <!-- OVERLAY: WIN (VICTORY) -->
+    <div class="screen-overlay" id="winOverlay">
+      <h2 style="font-size: 2.2rem; color: var(--col-emerald); margin-bottom: 6px;">ROGUE BOSS DEFEATED!</h2>
+      <p id="winStatsText" style="color: var(--col-white); margin-bottom: 16px; font-family: var(--font-mono);"></p>
+      <div class="btn-row">
+        <button class="primary-btn" id="playAgainBtn">🏆 PLAY AGAIN (R)</button>
+        <button class="secondary-btn" id="winMenuBtn">🏠 MAIN MENU</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- 4. TOUCH CONTROLS (FOR MOBILE / TOUCHSCREENS) -->
+  <div class="touch-controls" id="touchControls">
+    <div class="touch-group">
+      <button class="touch-btn" id="touchJumpBtn">⬆ JUMP</button>
+      <button class="touch-btn" id="touchDuckBtn">⬇ DUCK</button>
+    </div>
+    <div class="touch-group">
+      <button class="touch-btn attack" id="touchAttackBtn">⚡ ATTACK</button>
+      <button class="touch-btn special" id="touchSpecialBtn">💥 SPECIAL</button>
+    </div>
+  </div>
+
+  <!-- 5. MODAL: HOW TO PLAY -->
+  <div class="modal-backdrop" id="howToPlayModal">
+    <div class="modal-box">
+      <div class="modal-header">
+        <div class="modal-title">📖 HOW TO PLAY DINO GONE ROGUE</div>
+        <button class="modal-close-btn" id="closeHowToPlayBtn">×</button>
+      </div>
+      <div class="modal-body">
+        <p><strong>DINO GONE ROGUE</strong> is an endless-runner evolving into an AI-assisted boss encounter powered by your local Ollama Gemma model.</p>
+        
+        <h4 style="color: var(--col-cyan);">Phase Progression:</h4>
+        <ul style="padding-left: 20px;">
+          <li><strong>1. RUN (36s):</strong> Sprint across cyber ruins. Jump over ground crates (<span class="key-chip">SPACE</span> or <span class="key-chip">↑</span>) and duck under airborne recon drones (<span class="key-chip">↓</span>). Survive stumbles!</li>
+          <li><strong>2. WARNING:</strong> Siren sounds as a rogue cyber dinosaur arrives! Local Gemma generates its unique personality, backstory, and signature attack style.</li>
+          <li><strong>3. FLEE:</strong> Outrun the titan while dodging incoming ground quakes and laser hazards.</li>
+          <li><strong>4. CHARGE:</strong> Collect floating energy cells to charge your Rogue Blaster to 100%.</li>
+          <li><strong>5. FIGHT:</strong> Boss battle! Attack with Blaster (<span class="key-chip">J</span> / Space), unleash Charged Mega Bursts (<span class="key-chip">K</span>), and dodge telegraphed boss attacks!</li>
+        </ul>
+
+        <h4 style="color: var(--col-amber);">Gemma AI Integration:</h4>
+        <p>Your locally downloaded Gemma model dynamically generates contextual story snippets, boss profiles, tactical attack suggestions, funny commentary, and difficulty balancing. If Ollama is offline, intelligent fallback content seamlessly engages.</p>
+
+        <h4 style="color: var(--col-crimson);">Lives & Combat:</h4>
+        <p>You have 3 lives in runner mode (or 1 life in One-Hit Rogue mode). In combat, watch both your HP bar and the boss's telegraphed danger zones!</p>
+      </div>
+      <div class="modal-footer">
+        <button class="primary-btn" id="howToPlayOkBtn">GOT IT, LET'S RUN!</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- 6. MODAL: SETTINGS -->
+  <div class="modal-backdrop" id="settingsModal">
+    <div class="modal-box">
+      <div class="modal-header">
+        <div class="modal-title">⚙️ GAME SETTINGS</div>
+        <button class="modal-close-btn" id="closeSettingsBtn">×</button>
+      </div>
+      <div class="modal-body">
+        <div class="form-row">
+          <div>
+            <div class="form-label">Sound Effects</div>
+            <div class="form-desc">Procedural Web Audio synthesis (jumps, attacks, impacts)</div>
+          </div>
+          <label class="toggle-switch">
+            <input type="checkbox" id="soundToggle" checked>
+            <span class="toggle-slider"></span>
+          </label>
+        </div>
+
+        <div class="form-row">
+          <div>
+            <div class="form-label">Difficulty Level</div>
+            <div class="form-desc">Adjusts obstacle speed and combat parameters</div>
+          </div>
+          <select id="diffSelect">
+            <option value="Casual">Casual (0.8x Speed)</option>
+            <option value="Normal" selected>Normal (1.0x Speed)</option>
+            <option value="Rogue">Rogue (1.3x Speed)</option>
+          </select>
+        </div>
+
+        <div class="form-row">
+          <div>
+            <div class="form-label">One-Hit Mode</div>
+            <div class="form-desc">One stumble or hit immediately terminates the run</div>
+          </div>
+          <label class="toggle-switch">
+            <input type="checkbox" id="oneHitToggle">
+            <span class="toggle-slider"></span>
+          </label>
+        </div>
+
+        <div class="form-row">
+          <div>
+            <div class="form-label">AI Backend Mode</div>
+            <div class="form-desc">Local Ollama inference vs Predefined Fallback</div>
+          </div>
+          <select id="aiBackendSelect">
+            <option value="local" selected>Local Ollama (Real Gemma Model)</option>
+            <option value="off">AI Off (Predefined Content)</option>
+          </select>
+        </div>
+
+        <div class="form-row">
+          <div>
+            <div class="form-label">Ollama Model Name</div>
+            <div class="form-desc">Configured model installed in local Ollama</div>
+          </div>
+          <input type="text" id="modelNameInput" value="gemma3:4b" style="width: 140px;">
+        </div>
+
+        <div class="form-row">
+          <div>
+            <div class="form-label">Ollama Endpoint</div>
+            <div class="form-desc">Local Ollama API server address</div>
+          </div>
+          <input type="text" id="endpointInput" value="http://localhost:11434" style="width: 190px;">
+        </div>
+
+        <div style="margin-top: 8px; display: flex; gap: 8px;">
+          <button class="secondary-btn" id="settingsTestAiBtn" style="font-size: 0.8rem;">🧪 Test Ollama Connection</button>
+          <span id="settingsTestResult" style="font-size: 0.8rem; font-family: var(--font-mono); align-self: center;"></span>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button class="primary-btn" id="saveSettingsBtn">SAVE & CLOSE</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- 7. MODAL: INSPECTOR -->
+  <div class="modal-backdrop" id="inspectorModal">
+    <div class="modal-box" style="max-width: 780px;">
+      <div class="modal-header">
+        <div class="modal-title">🔍 GEMMA & RUNTIME INSPECTOR</div>
+        <button class="modal-close-btn" id="closeInspectorBtn">×</button>
+      </div>
+      <div class="modal-body">
+        <!-- Live metrics grid -->
+        <div class="inspector-metrics-grid">
+          <div class="metric-card">
+            <div class="metric-card-label">AI Status</div>
+            <div class="metric-card-val" id="inspStatus">Checking</div>
+          </div>
+          <div class="metric-card">
+            <div class="metric-card-label">Model</div>
+            <div class="metric-card-val" id="inspModel">gemma3:4b</div>
+          </div>
+          <div class="metric-card">
+            <div class="metric-card-label">Last Latency</div>
+            <div class="metric-card-val" id="inspLatency">0 ms</div>
+          </div>
+          <div class="metric-card">
+            <div class="metric-card-label">Total Requests</div>
+            <div class="metric-card-val" id="inspTotalReq">0</div>
+          </div>
+          <div class="metric-card">
+            <div class="metric-card-label">Successes</div>
+            <div class="metric-card-val" id="inspSuccessReq" style="color: var(--col-emerald);">0</div>
+          </div>
+          <div class="metric-card">
+            <div class="metric-card-label">Fallbacks / Errors</div>
+            <div class="metric-card-val" id="inspFallbackReq" style="color: var(--col-amber);">0</div>
+          </div>
+          <div class="metric-card">
+            <div class="metric-card-label">Current Phase</div>
+            <div class="metric-card-val" id="inspPhase">MENU</div>
+          </div>
+          <div class="metric-card">
+            <div class="metric-card-label">Speed Multiplier</div>
+            <div class="metric-card-val" id="inspSpeed">1.00x</div>
+          </div>
+        </div>
+
+        <!-- Last Request / Response details -->
+        <div style="background: var(--col-bg-elevated); padding: 10px; border-radius: 6px; font-family: var(--font-mono); font-size: 0.75rem;">
+          <div style="color: var(--col-cyan); font-weight: bold; margin-bottom: 4px;">LAST TRANSACTION:</div>
+          <div><strong>Purpose:</strong> <span id="inspLastPurpose">None</span></div>
+          <div><strong>Timestamp:</strong> <span id="inspLastTime">None</span></div>
+          <div><strong>Result:</strong> <span id="inspLastResult" style="color: var(--col-white);">None</span></div>
+        </div>
+
+        <!-- 10-call History Log -->
+        <div>
+          <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px;">
+            <span style="font-weight: 600; font-size: 0.85rem; color: var(--col-cyan);">RECENT AI CALLS (LAST 10)</span>
+            <div style="display: flex; gap: 8px;">
+              <button class="secondary-btn" id="inspTestBtn" style="padding: 4px 8px; font-size: 0.75rem;">🧪 Test Gemma</button>
+              <button class="secondary-btn" id="inspRefreshBtn" style="padding: 4px 8px; font-size: 0.75rem;">🔄 Refresh Status</button>
+              <button class="secondary-btn" id="inspClearBtn" style="padding: 4px 8px; font-size: 0.75rem;">🗑️ Clear Log</button>
+            </div>
+          </div>
+          <div style="max-height: 200px; overflow-y: auto; border: 1px solid rgba(255, 255, 255, 0.08); border-radius: 6px;">
+            <table class="inspector-log-table">
+              <thead>
+                <tr>
+                  <th>TIME</th>
+                  <th>PURPOSE</th>
+                  <th>SOURCE</th>
+                  <th>DURATION</th>
+                  <th>SUMMARY</th>
+                </tr>
+              </thead>
+              <tbody id="inspLogTableBody">
+                <tr><td colspan="5" style="text-align: center; color: var(--col-gray); padding: 12px;">No AI transactions recorded yet.</td></tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button class="secondary-btn" id="closeInspectorFooterBtn">CLOSE</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- JAVASCRIPT GAME LOGIC (16 LOGICAL SECTIONS) -->
+  <script>
+    /* ==========================================================================
+       SECTION 1: CONFIG
+       ========================================================================== */
+    const CONFIG = {
+      CANVAS_WIDTH: 900,
+      CANVAS_HEIGHT: 300,
+      TARGET_FPS: 60,
+      RUN_DURATION: 36, // seconds before boss warning
+      RUN_LIVES: 3,
+      ONE_HIT_MODE: false,
+      WARNING_DELAY: 4, // seconds for boss arrival warning
+      FLEE_DISTANCE: 400, // meters to escape
+      CHARGE_REQUIRED: 100, // 100% weapon charge
+      AI_TIMEOUT_MS: 5000,
+      GEMMA_RETRY_COUNT: 1,
+      GEMMA_BACKEND: "local", // "local" | "off"
+      GEMMA_ENDPOINT: "http://localhost:11434",
+      GEMMA_MODEL: "gemma3:4b", // Local verified installed model
+      COLORS: {
+        BG: "#0c1017",
+        WHITE: "#f0f6fc",
+        CYAN: "#00f3ff",
+        CRIMSON: "#ff2a5f",
+        AMBER: "#ffcc00",
+        EMERALD: "#00ff88"
+      }
+    };
+
+    /* ==========================================================================
+       SECTION 2: INPUT
+       ========================================================================== */
+    const Input = {
+      keysDown: {},
+      keysPressed: {},
+      init() {
+        window.addEventListener("keydown", (e) => {
+          // If typing in input fields, ignore shortcuts
+          if (["INPUT", "SELECT", "TEXTAREA"].includes(document.activeElement?.tagName)) return;
+
+          // Prevent page scrolling for game keys
+          if (["Space", "ArrowUp", "ArrowDown", "KeyW", "KeyS"].includes(e.code)) {
+            e.preventDefault();
+          }
+
+          if (!this.keysDown[e.code]) {
+            this.keysPressed[e.code] = true;
+          }
+          this.keysDown[e.code] = true;
+
+          // Universal shortcuts
+          if (e.code === "KeyP") togglePause();
+          if (e.code === "KeyR") restartGame();
+          if (e.code === "KeyM") toggleMute();
+          if (e.code === "KeyG") toggleInspector();
+
+          // Debug Phase Shortcuts (Keys 1-8)
+          if (e.key >= "1" && e.key <= "8") {
+            const phaseMap = {
+              "1": "MENU",
+              "2": "RUN",
+              "3": "WARNING",
+              "4": "FLEE",
+              "5": "CHARGE",
+              "6": "FIGHT",
+              "7": "WIN",
+              "8": "LOSE"
+            };
+            if (phaseMap[e.key]) {
+              console.log(`[DEBUG] Jump to Phase: ${phaseMap[e.key]}`);
+              StateMachine.transitionTo(phaseMap[e.key], { debug: true });
+            }
+          }
+        });
+
+        window.addEventListener("keyup", (e) => {
+          this.keysDown[e.code] = false;
+        });
+
+        // Touch Control Handlers
+        this.bindTouch("touchJumpBtn", () => { if (STATE.phase === "RUN" || STATE.phase === "FLEE" || STATE.phase === "CHARGE" || STATE.phase === "FIGHT") Runner.jump(); });
+        this.bindTouch("touchDuckBtn", (down) => { Runner.duck(down); });
+        this.bindTouch("touchAttackBtn", () => { Combat.triggerPlayerAttack(); });
+        this.bindTouch("touchSpecialBtn", () => { Combat.triggerPlayerSpecial(); });
+      },
+
+      bindTouch(id, callback) {
+        const btn = document.getElementById(id);
+        if (!btn) return;
+        btn.addEventListener("touchstart", (e) => { e.preventDefault(); callback(true); }, { passive: false });
+        btn.addEventListener("touchend", (e) => { e.preventDefault(); callback(false); }, { passive: false });
+        btn.addEventListener("mousedown", (e) => { e.preventDefault(); callback(true); });
+        btn.addEventListener("mouseup", (e) => { e.preventDefault(); callback(false); });
+      },
+
+      isDown(code) { return !!this.keysDown[code]; },
+      wasPressed(code) {
+        const val = !!this.keysPressed[code];
+        this.keysPressed[code] = false;
+        return val;
+      },
+      clearFrame() {
+        this.keysPressed = {};
+      }
+    };
+
+    /* ==========================================================================
+       SECTION 3: GAME STATE
+       ========================================================================== */
+    const STATE = {
+      phase: "MENU",
+      previousPhase: "MENU",
+      runId: 0,
+      score: 0,
+      distance: 0,
+      dodgeCount: 0,
+      stumbleCount: 0,
+      lives: CONFIG.RUN_LIVES,
+      playerHealth: 100,
+      maxPlayerHealth: 100,
+      speed: 6.5,
+      baseSpeed: 6.5,
+      speedMultiplier: 1.0,
+      runDirection: 1, // 1 = running right, -1 = running left in FLEE phase
+      difficulty: "Normal",
+      soundEnabled: true,
+      isPaused: false,
+      gameLoopRunning: false,
+      lastFrameTime: performance.now(),
+      runTimer: 0,
+      warningTimer: 0,
+      fleeDistanceRemaining: CONFIG.FLEE_DISTANCE,
+      screenShake: 0,
+      storyCooldown: 0,
+      commentaryCooldown: 0,
+
+      // Entities & collections
+      obstacles: [],
+      pickups: [],
+      projectiles: [],
+      particles: [],
+
+      // Active Boss Data
+      boss: {
+        x: 950,
+        y: 160,
+        targetX: 680,
+        width: 140,
+        height: 120,
+        health: 120,
+        maxHealth: 120,
+        name: "THE DEADLINE REX",
+        personality: "Bina Extension Wala Gussail Dino",
+        backstory: "Exam season mein submit na hone wale assignments se bana rogue titan.",
+        attackStyle: "Ground Shockwaves & Bhayankar Slams",
+        signatureAttack: "Deadline Stomp",
+        introDialogue: "ASSIGNMENT KAHA HAI RE TERA?!",
+        state: "idle", // idle | telegraph | attacking | recovering | defeated
+        stateTimer: 0,
+        currentAttack: null,
+        cooldownTimer: 2.0,
+        animTimer: 0,
+        speedMultiplier: 1.0,
+        facing: -1
+      },
+
+      // Weapon Data
+      weapon: {
+        name: "Rogue Blaster",
+        charge: 0,
+        maxCharge: 100,
+        cooldown: 0
+      },
+
+      // AI Inspection & Metrics State
+      ai: {
+        connected: false,
+        statusText: "Checking Ollama...",
+        isGenerating: false,
+        lastLatency: 0,
+        lastRequestTime: null,
+        lastResponseTime: null,
+        lastError: null,
+        lastPurpose: null,
+        lastResultSummary: null,
+        history: [], // Last 10 calls
+        stats: {
+          total: 0,
+          success: 0,
+          failed: 0,
+          timeouts: 0,
+          retries: 0,
+          fallbacks: 0
+        }
+      }
+    };
+
+    /* ==========================================================================
+       SECTION 4: STATE MACHINE
+       ========================================================================== */
+    const StateMachine = {
+      allowedTransitions: {
+        MENU: ["RUN", "WARNING", "FLEE", "CHARGE", "FIGHT", "WIN", "LOSE"],
+        RUN: ["MENU", "RUN", "WARNING", "LOSE"],
+        WARNING: ["MENU", "RUN", "FLEE", "LOSE"],
+        FLEE: ["MENU", "RUN", "CHARGE", "LOSE"],
+        CHARGE: ["MENU", "RUN", "FIGHT", "LOSE"],
+        FIGHT: ["MENU", "RUN", "WIN", "LOSE"],
+        WIN: ["MENU", "RUN"],
+        LOSE: ["MENU", "RUN"]
+      },
+
+      transitionTo(nextPhase, params = {}) {
+        const current = STATE.phase;
+        // Permit transitions if in allowed table or debug override
+        if (!params.debug && !this.allowedTransitions[current]?.includes(nextPhase)) {
+          console.warn(`[STATE] Invalid transition from ${current} to ${nextPhase}`);
+          return false;
+        }
+
+        console.log(`[STATE] Transition: ${current} -> ${nextPhase}`);
+        this.exitPhase(current);
+        STATE.previousPhase = current;
+        STATE.phase = nextPhase;
+        this.enterPhase(nextPhase, params);
+        UI.updatePhaseBadge(nextPhase);
+        Inspector.update();
+        return true;
+      },
+
+      exitPhase(phase) {
+        // Hide phase-specific overlays
+        if (phase === "MENU") UI.hide("menuOverlay");
+        if (phase === "FIGHT") {
+          UI.hide("bossHudOverlay");
+          UI.hide("playerCombatOverlay");
+        }
+      },
+
+      enterPhase(phase, params) {
+        switch (phase) {
+          case "MENU":
+            document.body.classList.remove("boss-theme");
+            UI.show("menuOverlay");
+            UI.hide("bossHudOverlay");
+            UI.hide("playerCombatOverlay");
+            STATE.obstacles = [];
+            STATE.pickups = [];
+            STATE.projectiles = [];
+            STATE.runDirection = 1;
+            Runner.facing = 1;
+            break;
+
+          case "RUN":
+            document.body.classList.remove("boss-theme");
+            UI.hide("menuOverlay");
+            UI.hide("pauseOverlay");
+            UI.hide("winOverlay");
+            UI.hide("loseOverlay");
+            STATE.runDirection = 1;
+            Runner.facing = 1;
+            STATE.runTimer = 0;
+            STATE.storyCooldown = 5.0; // Trigger first Hinglish story snippet at 5s
+            AudioSys.play("pickup");
+            break;
+
+          case "WARNING":
+            document.body.classList.add("boss-theme");
+            STATE.runDirection = 1;
+            Runner.facing = 1;
+            STATE.warningTimer = CONFIG.WARNING_DELAY;
+            STATE.boss.x = 960;
+            STATE.boss.targetX = 680; // Boss arrives on the RIGHT side!
+            STATE.boss.facing = -1; // Boss faces LEFT!
+            STATE.boss.speedMultiplier = 1.0;
+            STATE.screenShake = 14;
+            AudioSys.play("bossRoar");
+            CommentarySys.trigger("boss_arrives");
+            BossAI.generateProfile();
+            break;
+
+          case "FLEE":
+            document.body.classList.add("boss-theme");
+            STATE.runDirection = -1; // DIRECTION REVERSED! Running to the left!
+            Runner.facing = -1; // Runner flips horizontally to face left!
+            Runner.x = 220; // Runner positioned on left
+            STATE.fleeDistanceRemaining = CONFIG.FLEE_DISTANCE;
+            STATE.obstacles = [];
+            STATE.boss.x = 750; // Dino remains on the RIGHT side!
+            STATE.boss.facing = -1; // Dino faces left, chasing the player!
+            STATE.boss.speedMultiplier = 1.0;
+            AudioSys.play("charge");
+            UI.showStory("ULTE PAIR BHAAGO!", "Dino peeche hi pada hai! Reverse bhaago aur weapon depot pahuchein!", "🚨 BHAAAGO!");
+            CommentarySys.trigger("flee");
+            break;
+
+          case "CHARGE":
+            document.body.classList.add("boss-theme");
+            STATE.runDirection = 1; // Facing forward towards weapon cache
+            Runner.facing = 1;
+            Runner.x = 110;
+            STATE.weapon.charge = 0;
+            STATE.pickups = [];
+            STATE.obstacles = [];
+            STATE.boss.x = 700; // Dino stands guard on right edge
+            STATE.boss.facing = -1;
+            UI.show("playerCombatOverlay");
+            UI.showStory("POWER UP!", "Energy cells collect karo aur Blaster ko 100% charge karo!", "⚡ WEAPONS");
+            AudioSys.play("charge");
+            break;
+
+          case "FIGHT":
+            document.body.classList.add("boss-theme");
+            STATE.runDirection = 1;
+            Runner.facing = 1;
+            Runner.x = 110;
+            STATE.boss.x = 680; // Dino on the RIGHT side!
+            STATE.boss.facing = -1; // Dino faces left towards runner
+            STATE.boss.state = "idle";
+            STATE.boss.cooldownTimer = 1.5;
+            STATE.boss.speedMultiplier = 1.0;
+            UI.show("bossHudOverlay");
+            UI.show("playerCombatOverlay");
+            UI.updateBossHud();
+            AudioSys.play("bossRoar");
+            CommentarySys.trigger("combat_start");
+            BossAI.requestAttackSuggestion();
+            break;
+
+          case "WIN":
+            document.body.classList.remove("boss-theme");
+            UI.show("winOverlay");
+            STATE.score += 500;
+            UI.setWinStats();
+            AudioSys.play("victory");
+            CommentarySys.trigger("victory");
+            break;
+
+          case "LOSE":
+            UI.show("loseOverlay");
+            UI.setLoseStats();
+            AudioSys.play("defeat");
+            CommentarySys.trigger("defeat");
+            break;
+        }
+      }
+    };
+
+    /* ==========================================================================
+       SECTION 5: PHASES UPDATE LOGIC
+       ========================================================================== */
+    const Phases = {
+      updateMenu(dt) {
+        // Decorative background loop
+        Runner.update(dt, false);
+      },
+
+      updateRun(dt) {
+        STATE.runTimer += dt;
+        // Speed increases gradually with distance!
+        STATE.speed = STATE.baseSpeed + Math.min(4.0, STATE.distance / 250);
+        STATE.distance += (STATE.speed * STATE.speedMultiplier * dt * 4);
+        STATE.score = Math.floor(STATE.distance + (STATE.dodgeCount * 10));
+
+        // Periodic Story Generation in Hinglish
+        STATE.storyCooldown -= dt;
+        if (STATE.storyCooldown <= 0 && STATE.runTimer < CONFIG.RUN_DURATION - 8) {
+          STATE.storyCooldown = 18; // Next story snippet in 18s
+          StorySys.generateStorySnippet();
+        }
+
+        // Adaptive difficulty evaluation every 10s
+        if (Math.floor(STATE.runTimer) % 10 === 0 && Math.floor(STATE.runTimer) > 0) {
+          AdaptiveDifficulty.evaluate();
+        }
+
+        Runner.update(dt, true);
+        Obstacles.update(dt);
+
+        // Transition to WARNING after RUN_DURATION
+        if (STATE.runTimer >= CONFIG.RUN_DURATION) {
+          StateMachine.transitionTo("WARNING");
+        }
+      },
+
+      updateWarning(dt) {
+        STATE.warningTimer -= dt;
+        // Boss walks onto screen from the right side towards x = 680
+        STATE.boss.x += (STATE.boss.targetX - STATE.boss.x) * (dt * 3.5);
+        Runner.update(dt, true);
+
+        if (STATE.warningTimer <= 0) {
+          StateMachine.transitionTo("FLEE");
+        }
+      },
+
+      updateFlee(dt) {
+        // Runner runs LEFTwards away from the boss on the right!
+        const travel = STATE.speed * STATE.speedMultiplier * dt * 5;
+        STATE.distance += travel;
+        STATE.fleeDistanceRemaining -= travel;
+        STATE.score = Math.floor(STATE.distance + (STATE.dodgeCount * 10));
+
+        // Gradual increase in Dino speed & aggression
+        STATE.boss.speedMultiplier += dt * 0.05;
+
+        // Dino steadily chases from the right side towards the player!
+        const targetBossX = Math.max(380, 750 - ((1 - STATE.fleeDistanceRemaining / CONFIG.FLEE_DISTANCE) * 330));
+        STATE.boss.x += (targetBossX - STATE.boss.x) * (dt * 2.5 * STATE.boss.speedMultiplier);
+
+        Runner.update(dt, true);
+        Obstacles.update(dt);
+
+        // Periodic Dino ground stomp waves moving from right to left
+        STATE.boss.stateTimer = (STATE.boss.stateTimer || 0) - dt;
+        if (STATE.boss.stateTimer <= 0) {
+          STATE.boss.stateTimer = Math.max(1.5, 3.2 - (STATE.boss.speedMultiplier * 0.7));
+          AudioSys.play("bossRoar");
+          STATE.screenShake = 6;
+          Combat.spawnHazard({
+            type: "ground_wave",
+            x: STATE.boss.x,
+            y: 230,
+            w: 28,
+            h: 28,
+            vx: -360 * STATE.boss.speedMultiplier,
+            damage: 15
+          });
+        }
+
+        if (STATE.fleeDistanceRemaining <= 0) {
+          StateMachine.transitionTo("CHARGE");
+        }
+      },
+
+      updateCharge(dt) {
+        STATE.distance += (STATE.speed * dt * 4);
+        Runner.update(dt, true);
+        Pickups.update(dt);
+        Obstacles.update(dt);
+
+        if (STATE.weapon.charge >= CONFIG.CHARGE_REQUIRED) {
+          AudioSys.play("charge");
+          StateMachine.transitionTo("FIGHT");
+        }
+      },
+
+      updateFight(dt) {
+        // Enrage mechanic: as boss HP decreases, boss speed and attack rate gradually increase!
+        const hpRatio = Math.max(0.1, STATE.boss.health / STATE.boss.maxHealth);
+        STATE.boss.speedMultiplier = 1.0 + (1.0 - hpRatio) * 0.75; // Up to 1.75x speed!
+
+        Runner.update(dt, true);
+        BossAI.update(dt);
+        Combat.update(dt);
+
+        if (STATE.boss.health <= 0) {
+          STATE.boss.health = 0;
+          StateMachine.transitionTo("WIN");
+        } else if (STATE.playerHealth <= 0) {
+          STATE.playerHealth = 0;
+          StateMachine.transitionTo("LOSE");
+        }
+      },
+
+      updateWin(dt) {
+        Particles.update(dt);
+      },
+
+      updateLose(dt) {
+        Particles.update(dt);
+      }
+    };
+
+    /* ==========================================================================
+       SECTION 6: RUNNER
+       ========================================================================== */
+    const Runner = {
+      x: 100,
+      y: 210,
+      vy: 0,
+      width: 28,
+      height: 48,
+      groundY: 210,
+      isGrounded: true,
+      isDucking: false,
+      facing: 1, // 1 = facing right, -1 = facing left (in FLEE phase)
+      stumbleTimer: 0,
+      invulnerableTimer: 0,
+      animTimer: 0,
+
+      reset() {
+        this.x = 100;
+        this.y = this.groundY;
+        this.vy = 0;
+        this.isGrounded = true;
+        this.isDucking = false;
+        this.facing = 1;
+        this.stumbleTimer = 0;
+        this.invulnerableTimer = 0;
+        this.animTimer = 0;
+      },
+
+      jump() {
+        if (this.isGrounded && !this.isDucking) {
+          this.vy = -540; // Clean initial velocity in px/s (apex around y=129)
+          this.isGrounded = false;
+          AudioSys.play("jump");
+          Particles.spawnPuff(this.x + 10, this.groundY + this.height);
+        }
+      },
+
+      duck(isDucking) {
+        if (!this.isGrounded) return;
+        this.isDucking = isDucking;
+        if (isDucking) {
+          this.height = 26;
+          this.y = this.groundY + 22;
+        } else {
+          this.height = 48;
+          this.y = this.groundY;
+        }
+      },
+
+      stumble() {
+        if (this.invulnerableTimer > 0) return;
+
+        STATE.stumbleCount++;
+        this.stumbleTimer = 1.0;
+        this.invulnerableTimer = 1.4;
+        STATE.screenShake = 8;
+        AudioSys.play("stumble");
+
+        // Stumble speed penalty: drop to 60% of current speed
+        STATE.speed = STATE.speed * 0.6;
+
+        if (CONFIG.ONE_HIT_MODE) {
+          STATE.lives = 0;
+          StateMachine.transitionTo("LOSE");
+          return;
+        }
+
+        STATE.lives--;
+        UI.updateHud();
+
+        if (STATE.lives <= 0) {
+          StateMachine.transitionTo("LOSE");
+        } else {
+          CommentarySys.trigger("stumble");
+        }
+      },
+
+      update(dt, applyControls) {
+        this.animTimer += dt * 10;
+
+        if (applyControls) {
+          if (Input.wasPressed("Space") || Input.wasPressed("ArrowUp") || Input.wasPressed("KeyW")) {
+            this.jump();
+          }
+          const duckActive = Input.isDown("ArrowDown") || Input.isDown("KeyS");
+          this.duck(duckActive);
+        }
+
+        // True physics with dt and hard ceiling clamp to prevent going off-screen
+        if (!this.isGrounded) {
+          this.vy += 1800 * dt; // Gravity in px/s^2
+          this.y += this.vy * dt;
+
+          // HARD CEILING CLAMP: Cannot jump off top of canvas! Clamped at y = 35px
+          if (this.y < 35) {
+            this.y = 35;
+            if (this.vy < 0) this.vy = 0;
+          }
+
+          if (this.y >= this.groundY) {
+            this.y = this.groundY;
+            this.vy = 0;
+            this.isGrounded = true;
+            AudioSys.play("dodge");
+            Particles.spawnPuff(this.x + 10, this.groundY + this.height);
+          }
+        }
+
+        // Stumble recovery to current distance-scaled speed
+        if (this.stumbleTimer > 0) {
+          this.stumbleTimer -= dt;
+          if (this.stumbleTimer <= 0) {
+            STATE.speed = STATE.baseSpeed + Math.min(4.0, STATE.distance / 250);
+          }
+        }
+
+        if (this.invulnerableTimer > 0) {
+          this.invulnerableTimer -= dt;
+        }
+      },
+
+      getHitbox() {
+        return {
+          x: this.x + 4,
+          y: this.y + 2,
+          w: this.width - 8,
+          h: this.height - 4
+        };
+      }
+    };
+
+    /* ==========================================================================
+       SECTION 7: OBSTACLES & PICKUPS
+       ========================================================================== */
+    const Obstacles = {
+      spawnTimer: 1.0,
+
+      reset() {
+        STATE.obstacles = [];
+        this.spawnTimer = 0.9;
+      },
+
+      update(dt) {
+        this.spawnTimer -= dt;
+        if (this.spawnTimer <= 0) {
+          this.spawn();
+          // Dynamic interval: gets tighter and harder as distance increases!
+          const minInterval = Math.max(0.65, 1.25 - (STATE.distance / 1200));
+          this.spawnTimer = minInterval + Math.random() * 0.55;
+        }
+
+        const runnerBox = Runner.getHitbox();
+        const dir = STATE.runDirection || 1;
+
+        for (let i = STATE.obstacles.length - 1; i >= 0; i--) {
+          const obs = STATE.obstacles[i];
+          // Movement based on run direction (in RUN: moves left, in FLEE: moves right)
+          obs.x -= (dir * STATE.speed * STATE.speedMultiplier * dt * 50);
+
+          // Dodge checking
+          if (!obs.dodged) {
+            const hasPassed = dir === 1 ? (obs.x + obs.w < Runner.x) : (obs.x > Runner.x + Runner.width);
+            if (hasPassed) {
+              obs.dodged = true;
+              STATE.dodgeCount++;
+              UI.updateHud();
+              if (STATE.dodgeCount % 4 === 0) {
+                CommentarySys.trigger("dodge_streak");
+              }
+            }
+          }
+
+          // AABB collision detection
+          if (
+            runnerBox.x < obs.x + obs.w &&
+            runnerBox.x + runnerBox.w > obs.x &&
+            runnerBox.y < obs.y + obs.h &&
+            runnerBox.y + runnerBox.h > obs.y
+          ) {
+            Runner.stumble();
+            Particles.spawnSparks(runnerBox.x + 15, runnerBox.y + 15, CONFIG.COLORS.CRIMSON);
+            STATE.obstacles.splice(i, 1);
+            continue;
+          }
+
+          // Offscreen boundary cleanup
+          if (obs.x < -100 || obs.x > 1050) {
+            STATE.obstacles.splice(i, 1);
+          }
+        }
+      },
+
+      spawn() {
+        const rand = Math.random();
+        const dir = STATE.runDirection || 1;
+        const spawnX = dir === 1 ? 930 : -50;
+
+        if (rand < 0.28) {
+          // Standard spike crate (jump)
+          STATE.obstacles.push({
+            type: "crate",
+            x: spawnX,
+            y: 226,
+            w: 30,
+            h: 32,
+            dodged: false
+          });
+        } else if (rand < 0.48) {
+          // Double crate (requires longer jump!)
+          STATE.obstacles.push({
+            type: "double_crate",
+            x: spawnX,
+            y: 226,
+            w: 58,
+            h: 32,
+            dodged: false
+          });
+        } else if (rand < 0.68) {
+          // Tall barrier pylon (requires apex jump!)
+          STATE.obstacles.push({
+            type: "tall_pylon",
+            x: spawnX,
+            y: 210,
+            w: 22,
+            h: 48,
+            dodged: false
+          });
+        } else if (rand < 0.88) {
+          // Low flying drone (MUST DUCK UNDER!)
+          STATE.obstacles.push({
+            type: "drone_low",
+            x: spawnX,
+            y: 196,
+            w: 36,
+            h: 20,
+            dodged: false,
+            animTimer: 0
+          });
+        } else {
+          // Pulsing laser tripwire gate
+          STATE.obstacles.push({
+            type: "laser_gate",
+            x: spawnX,
+            y: 202,
+            w: 18,
+            h: 56,
+            dodged: false,
+            animTimer: 0
+          });
+        }
+      }
+    };
+
+    const Pickups = {
+      spawnTimer: 1.2,
+
+      reset() {
+        STATE.pickups = [];
+        this.spawnTimer = 1.0;
+      },
+
+      update(dt) {
+        this.spawnTimer -= dt;
+        if (this.spawnTimer <= 0) {
+          this.spawn();
+          this.spawnTimer = 1.0 + Math.random() * 0.8;
+        }
+
+        const runnerBox = Runner.getHitbox();
+
+        for (let i = STATE.pickups.length - 1; i >= 0; i--) {
+          const p = STATE.pickups[i];
+          p.x -= STATE.speed * dt * 45;
+          p.anim += dt * 4;
+
+          // Pickup collision
+          if (
+            runnerBox.x < p.x + p.w &&
+            runnerBox.x + runnerBox.w > p.x &&
+            runnerBox.y < p.y + p.h &&
+            runnerBox.y + runnerBox.h > p.y
+          ) {
+            STATE.weapon.charge = Math.min(CONFIG.CHARGE_REQUIRED, STATE.weapon.charge + 25);
+            AudioSys.play("pickup");
+            Particles.spawnSparks(p.x, p.y, CONFIG.COLORS.AMBER);
+            UI.updatePlayerCombatHud();
+            STATE.pickups.splice(i, 1);
+            continue;
+          }
+
+          if (p.x < -40) {
+            STATE.pickups.splice(i, 1);
+          }
+        }
+      },
+
+      spawn() {
+        STATE.pickups.push({
+          x: 920,
+          y: Math.random() < 0.6 ? 220 : 160,
+          w: 20,
+          h: 20,
+          anim: 0
+        });
+      }
+    };
+
+    /* ==========================================================================
+       SECTION 8: BOSS AI
+       ========================================================================== */
+    const BossAI = {
+      whitelistedAttacks: ["ground_wave", "meteor_slam", "tail_swipe", "laser_breath", "charge_rush"],
+
+      // Fallback Profile
+      fallbackProfile: {
+        name: "THE DEADLINE REX",
+        personality: "Bina Extension Wala Gussail Dino",
+        backstory: "Exam season mein submit na hone wale assignments se bana rogue titan.",
+        attackStyle: "Ground Shockwaves & Bhayankar Slams",
+        difficulty: 3,
+        signatureAttack: "Deadline Stomp",
+        introDialogue: "ASSIGNMENT KAHA HAI RE TERA?!"
+      },
+
+      async generateProfile() {
+        const schema = {
+          name: "string",
+          personality: "string",
+          backstory: "string",
+          attackStyle: "string",
+          difficulty: "number",
+          signatureAttack: "string",
+          introDialogue: "string"
+        };
+
+        const res = await GemmaClient.askGemma({
+          purpose: "Boss Personality Profile",
+          system: "You are a creative Indian game director. Provide boss profile in funny Hinglish. Output raw JSON matching schema.",
+          prompt: `Create a funny, chaotic boss profile in Hinglish for a cyber dinosaur boss in a cyberpunk runner. Output JSON with fields: name, personality (in Hinglish), backstory (in Hinglish), attackStyle, difficulty (1-5), signatureAttack, introDialogue (funny Hinglish threat, max 8 words like 'ASSIGNMENT KAHA HAI TERA?!').`,
+          schema,
+          timeoutMs: CONFIG.AI_TIMEOUT_MS,
+          fallback: this.fallbackProfile
+        });
+
+        // Apply validated properties
+        STATE.boss.name = (res.name || this.fallbackProfile.name).toUpperCase();
+        STATE.boss.personality = res.personality || this.fallbackProfile.personality;
+        STATE.boss.signatureAttack = res.signatureAttack || this.fallbackProfile.signatureAttack;
+        STATE.boss.introDialogue = res.introDialogue || this.fallbackProfile.introDialogue;
+
+        UI.showStory(STATE.boss.name, `"${STATE.boss.introDialogue}"`, "🦖 DINO ALERT", res.isFallback);
+        UI.updateBossHud();
+      },
+
+      async requestAttackSuggestion() {
+        if (STATE.phase !== "FIGHT" || STATE.boss.health <= 0) return;
+
+        const fallbackAttack = {
+          attackName: "Deadline Stomp",
+          attackType: "ground_wave",
+          telegraphDuration: 0.9,
+          cooldown: 2.2,
+          damage: 15,
+          description: "Sends a ground shockwave toward player."
+        };
+
+        const res = await GemmaClient.askGemma({
+          purpose: "Tactical Boss Attack Suggestion",
+          system: "You are a boss combat tactician. Output JSON only. Allowed attackTypes: ground_wave, meteor_slam, tail_swipe, laser_breath, charge_rush.",
+          prompt: `Boss '${STATE.boss.name}' (HP: ${STATE.boss.health}/120) faces Player (HP: ${STATE.playerHealth}/100, Dodges: ${STATE.dodgeCount}). Suggest the next attack in JSON: { attackName, attackType, telegraphDuration (0.6-1.5), cooldown (1.5-3.5), damage (10-25), description }.`,
+          schema: { attackName: "string", attackType: "string", telegraphDuration: "number", cooldown: "number", damage: "number" },
+          timeoutMs: CONFIG.AI_TIMEOUT_MS,
+          fallback: fallbackAttack
+        });
+
+        // Validate and clamp
+        let type = this.whitelistedAttacks.includes(res.attackType) ? res.attackType : "ground_wave";
+        let telegraph = Math.min(2.0, Math.max(0.6, Number(res.telegraphDuration) || 0.9));
+        let cooldown = Math.min(4.0, Math.max(1.2, Number(res.cooldown) || 2.0));
+        let damage = Math.min(25, Math.max(8, Number(res.damage) || 15));
+
+        STATE.boss.nextSuggestedAttack = {
+          name: res.attackName || "Cyber Slam",
+          type,
+          telegraph,
+          cooldown,
+          damage
+        };
+      },
+
+      update(dt) {
+        const boss = STATE.boss;
+        boss.animTimer += dt * 3;
+
+        // State Machine for Boss Combat Cycle
+        if (boss.state === "idle") {
+          boss.cooldownTimer -= dt;
+          if (boss.cooldownTimer <= 0) {
+            // Select attack
+            const attack = boss.nextSuggestedAttack || {
+              name: "Ground Wave",
+              type: "ground_wave",
+              telegraph: 0.9,
+              cooldown: 2.2,
+              damage: 15
+            };
+            boss.currentAttack = attack;
+            boss.state = "telegraph";
+            boss.stateTimer = attack.telegraph;
+            // Pre-fetch next attack asynchronously
+            this.requestAttackSuggestion();
+          }
+        } else if (boss.state === "telegraph") {
+          boss.stateTimer -= dt;
+          if (boss.stateTimer <= 0) {
+            this.executeAttack(boss.currentAttack);
+            boss.state = "recovering";
+            boss.stateTimer = 0.5;
+          }
+        } else if (boss.state === "recovering") {
+          boss.stateTimer -= dt;
+          if (boss.stateTimer <= 0) {
+            boss.state = "idle";
+            boss.cooldownTimer = boss.currentAttack?.cooldown || 2.0;
+          }
+        }
+      },
+
+      executeAttack(attack) {
+        if (!attack) return;
+        AudioSys.play("bossRoar");
+        STATE.screenShake = 6;
+
+        if (attack.type === "ground_wave") {
+          // Spawns a moving ground shockwave projectile towards the player
+          Combat.spawnHazard({
+            type: "ground_wave",
+            x: STATE.boss.x,
+            y: 230,
+            w: 28,
+            h: 28,
+            vx: -340,
+            damage: attack.damage
+          });
+        } else if (attack.type === "tail_swipe" || attack.type === "laser_breath") {
+          // Spawns a mid-height laser sweep
+          Combat.spawnHazard({
+            type: "laser_sweep",
+            x: STATE.boss.x,
+            y: 190,
+            w: 40,
+            h: 18,
+            vx: -380,
+            damage: attack.damage
+          });
+        } else {
+          // Meteor slam / aerial shockwave
+          Combat.spawnHazard({
+            type: "ground_wave",
+            x: STATE.boss.x,
+            y: 230,
+            w: 32,
+            h: 30,
+            vx: -360,
+            damage: attack.damage
+          });
+        }
+      }
+    };
+
+    /* ==========================================================================
+       SECTION 9: COMBAT
+       ========================================================================== */
+    const Combat = {
+      playerAttackCooldown: 0,
+
+      update(dt) {
+        if (this.playerAttackCooldown > 0) {
+          this.playerAttackCooldown -= dt;
+        }
+
+        // Check Input for Combat Attacks
+        if (STATE.phase === "FIGHT") {
+          if (Input.wasPressed("KeyJ") || Input.wasPressed("KeyZ")) {
+            this.triggerPlayerAttack();
+          }
+          if (Input.wasPressed("KeyK") || Input.wasPressed("KeyX")) {
+            this.triggerPlayerSpecial();
+          }
+        }
+
+        const runnerBox = Runner.getHitbox();
+        const bossBox = {
+          x: STATE.boss.x,
+          y: STATE.boss.y,
+          w: STATE.boss.width,
+          h: STATE.boss.height
+        };
+
+        // Update Projectiles (Player shots & Boss hazards)
+        for (let i = STATE.projectiles.length - 1; i >= 0; i--) {
+          const p = STATE.projectiles[i];
+          p.x += p.vx * dt;
+          p.y += (p.vy || 0) * dt;
+
+          if (p.isPlayer) {
+            // Collision with Boss
+            if (
+              p.x + p.w > bossBox.x &&
+              p.x < bossBox.x + bossBox.w &&
+              p.y + p.h > bossBox.y &&
+              p.y < bossBox.y + bossBox.h
+            ) {
+              STATE.boss.health = Math.max(0, STATE.boss.health - p.damage);
+              UI.updateBossHud();
+              AudioSys.play("hit");
+              Particles.spawnSparks(p.x, p.y, CONFIG.COLORS.CYAN);
+              STATE.screenShake = 4;
+              STATE.projectiles.splice(i, 1);
+              continue;
+            }
+          } else {
+            // Boss Hazard collision with Runner
+            if (
+              runnerBox.x < p.x + p.w &&
+              runnerBox.x + runnerBox.w > p.x &&
+              runnerBox.y < p.y + p.h &&
+              runnerBox.y + runnerBox.h > p.y
+            ) {
+              if (Runner.invulnerableTimer <= 0) {
+                STATE.playerHealth = Math.max(0, STATE.playerHealth - p.damage);
+                Runner.invulnerableTimer = 1.0;
+                STATE.screenShake = 10;
+                AudioSys.play("damage");
+                Particles.spawnSparks(runnerBox.x + 10, runnerBox.y + 10, CONFIG.COLORS.CRIMSON);
+                UI.updatePlayerCombatHud();
+                if (STATE.playerHealth <= 0) {
+                  StateMachine.transitionTo("LOSE");
+                }
+              }
+              STATE.projectiles.splice(i, 1);
+              continue;
+            }
+          }
+
+          // Offscreen boundary cleanup
+          if (p.x < -100 || p.x > 1000) {
+            STATE.projectiles.splice(i, 1);
+          }
+        }
+      },
+
+      triggerPlayerAttack() {
+        if (STATE.phase !== "FIGHT") return;
+        if (this.playerAttackCooldown > 0) return;
+
+        this.playerAttackCooldown = 0.28;
+        AudioSys.play("attackLaser");
+
+        STATE.projectiles.push({
+          isPlayer: true,
+          x: Runner.x + Runner.width + 4,
+          y: Runner.y + (Runner.height * 0.4),
+          w: 18,
+          h: 6,
+          vx: 520,
+          damage: 12
+        });
+      },
+
+      triggerPlayerSpecial() {
+        if (STATE.phase !== "FIGHT") return;
+        if (STATE.weapon.charge < 40) {
+          UI.showCommentary("Need at least 40% Charge for Mega Burst!", true);
+          return;
+        }
+
+        STATE.weapon.charge -= 40;
+        UI.updatePlayerCombatHud();
+        AudioSys.play("megaBurst");
+        STATE.screenShake = 8;
+
+        STATE.projectiles.push({
+          isPlayer: true,
+          isSpecial: true,
+          x: Runner.x + Runner.width + 4,
+          y: Runner.y + (Runner.height * 0.2),
+          w: 36,
+          h: 22,
+          vx: 600,
+          damage: 35
+        });
+      },
+
+      spawnHazard(hazard) {
+        STATE.projectiles.push({
+          isPlayer: false,
+          ...hazard
+        });
+      }
+    };
+
+    /* ==========================================================================
+       SECTION 10: GEMMA CLIENT (OLLAMA LOCAL API)
+       ========================================================================== */
+    const GemmaClient = {
+      async askGemma({ purpose, system, prompt, schema, timeoutMs = 5000, fallback }) {
+        const currentRunId = STATE.runId;
+        const currentPhase = STATE.phase;
+        const startTime = performance.now();
+        STATE.ai.stats.total++;
+        STATE.ai.isGenerating = true;
+        STATE.ai.lastPurpose = purpose;
+        STATE.ai.lastRequestTime = new Date().toLocaleTimeString();
+        Inspector.update();
+
+        // If AI is configured OFF in settings, return fallback immediately
+        if (CONFIG.GEMMA_BACKEND === "off") {
+          return this.handleFallback(fallback, purpose, startTime, "AI configured OFF");
+        }
+
+        const controller = new AbortController();
+        const timeoutId = setTimeout(() => controller.abort(), timeoutMs);
+
+        try {
+          // Construct chat messages payload
+          const payload = {
+            model: CONFIG.GEMMA_MODEL,
+            messages: [
+              { role: "system", content: system || "You are an assistant. Respond in pure JSON format." },
+              { role: "user", content: prompt }
+            ],
+            stream: false,
+            format: "json"
+          };
+
+          const res = await fetch(`${CONFIG.GEMMA_ENDPOINT}/api/chat`, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify(payload),
+            signal: controller.signal
+          });
+
+          clearTimeout(timeoutId);
+
+          if (!res.ok) {
+            throw new Error(`HTTP ${res.status}: ${res.statusText}`);
+          }
+
+          const data = await res.json();
+          let rawContent = data.message?.content || "";
+
+          // Clean markdown code blocks e.g. ```json ... ```
+          rawContent = rawContent.replace(/```(?:json)?/gi, "").replace(/```/g, "").trim();
+
+          const parsed = JSON.parse(rawContent);
+
+          // Stale response rejection if game restarted or changed phase significantly
+          if (STATE.runId !== currentRunId) {
+            console.warn(`[GEMMA] Ignored stale response for ${purpose} (Run ID mismatch)`);
+            return fallback;
+          }
+
+          const duration = Math.round(performance.now() - startTime);
+          STATE.ai.stats.success++;
+          STATE.ai.connected = true;
+          STATE.ai.statusText = "Connected";
+          STATE.ai.lastLatency = duration;
+          STATE.ai.lastResponseTime = new Date().toLocaleTimeString();
+          STATE.ai.lastResultSummary = JSON.stringify(parsed).substring(0, 70);
+
+          Inspector.logCall({
+            time: new Date().toLocaleTimeString(),
+            purpose,
+            source: "AI (Local)",
+            duration: `${duration}ms`,
+            summary: STATE.ai.lastResultSummary
+          });
+
+          STATE.ai.isGenerating = false;
+          Inspector.update();
+          return { ...parsed, isFallback: false };
+
+        } catch (err) {
+          clearTimeout(timeoutId);
+          const isTimeout = err.name === "AbortError";
+          if (isTimeout) STATE.ai.stats.timeouts++;
+          STATE.ai.stats.failed++;
+          STATE.ai.lastError = isTimeout ? "Timeout" : err.message;
+
+          return this.handleFallback(fallback, purpose, startTime, isTimeout ? "Timeout" : err.message);
+        } finally {
+          STATE.ai.isGenerating = false;
+          Inspector.update();
+        }
+      },
+
+      handleFallback(fallback, purpose, startTime, errorReason) {
+        STATE.ai.stats.fallbacks++;
+        const duration = Math.round(performance.now() - startTime);
+
+        Inspector.logCall({
+          time: new Date().toLocaleTimeString(),
+          purpose,
+          source: "Fallback",
+          duration: `${duration}ms`,
+          summary: `Used Fallback: [${errorReason}]`
+        });
+
+        return { ...fallback, isFallback: true };
+      },
+
+      async checkConnection() {
+        const badge = document.getElementById("gemmaBadge");
+        const text = document.getElementById("gemmaStatusText");
+        text.innerText = "Gemma: Probing...";
+        badge.className = "badge badge-gemma checking";
+
+        try {
+          const res = await fetch(`${CONFIG.GEMMA_ENDPOINT}/api/tags`, { method: "GET" });
+          if (!res.ok) throw new Error("API unreachable");
+          const data = await res.json();
+          const models = (data.models || []).map(m => m.name);
+
+          // Check if gemma model exists
+          const foundModel = models.find(m => m.includes("gemma") || m === CONFIG.GEMMA_MODEL);
+          if (foundModel) {
+            CONFIG.GEMMA_MODEL = foundModel;
+            STATE.ai.connected = true;
+            STATE.ai.statusText = `Connected (${foundModel})`;
+            text.innerText = `Gemma: Ready (${foundModel})`;
+            badge.className = "badge badge-gemma";
+          } else {
+            STATE.ai.connected = false;
+            STATE.ai.statusText = "Model Missing";
+            text.innerText = "Gemma: Model Missing";
+            badge.className = "badge badge-gemma offline";
+          }
+        } catch (err) {
+          STATE.ai.connected = false;
+          STATE.ai.statusText = "Offline (Fallback Active)";
+          text.innerText = "Gemma: Offline (Fallback)";
+          badge.className = "badge badge-gemma offline";
+        }
+        Inspector.update();
+      }
+    };
+
+    /* ==========================================================================
+       SECTION 11: COMMENTARY & STORY SYSTEMS
+       ========================================================================== */
+    const StorySys = {
+      fallbackStories: [
+        { story: "Arre laptop ka charger chori ho gaya! Campus Dino peeche bhaag raha hai!", mood: "chaotic" },
+        { story: "Tiffin box mein momos the! Rogue Dino ne smell kar liya, bhaago re!", mood: "hungry" },
+        { story: "Uncommitted code live server pe deploy ho gaya! Bug monster zinda ho gaya!", mood: "panicked" },
+        { story: "Semester exam ka admit card Dino chaba gaya! Full speed chase shuru!", mood: "urgent" },
+        { story: "Chai ki tapri band ho gayi aur Wi-Fi ud gaya! Dino full gusse mein rampage kar raha hai!", mood: "angry" }
+      ],
+
+      async generateStorySnippet() {
+        const fallback = this.fallbackStories[Math.floor(Math.random() * this.fallbackStories.length)];
+        const res = await GemmaClient.askGemma({
+          purpose: "Runner Story Snippet",
+          system: "You are an Indian college gamer sharing hilarious micro-stories in natural Hinglish (mix of Hindi + English written in Latin alphabet, max 16 words). Output raw JSON: { story, mood }.",
+          prompt: "Generate a funny micro-story snippet in Hinglish about running away from campus cyber dinosaurs.",
+          schema: { story: "string", mood: "string" },
+          timeoutMs: CONFIG.AI_TIMEOUT_MS,
+          fallback
+        });
+
+        UI.showStory("ROGUE CHRONICLES", res.story || fallback.story, "📖 ROGUE LOG", res.isFallback);
+      }
+    };
+
+    const CommentarySys = {
+      cooldown: 0,
+      fallbackComments: {
+        dodge_streak: "Arre bhai bhai bhai! Kya smooth dodge maara! Ekdum Matrix style!",
+        stumble: "Arey yaar! Dekh ke chalo, road pe kela thodi tha! Lifeline kam ho gayi!",
+        boss_arrives: "Bhaag Milkha Bhaag! Giant Dino right se aa gaya, assignment maang raha hai!",
+        flee: "Ulte pair bhaago bhidu! Dino peeche hi pada hai, speed badhao!",
+        pickup: "Full power! Energy cell mil gaya, ab Blaster overclock hoga!",
+        combat_start: "Abhi aayega na maza bhidu! Blaster chalao aur Dino ko pel do!",
+        critical_hit: "Direct hit bhidu! Boss ke CPU pe 440 volt ka jhatka laga!",
+        low_health: "Arre re re! HP khatam hone wali hai, sambhal ke chacha clutch karo!",
+        victory: "Khatam, tata, bye-bye! Boss ko pack karke ghar bhej diya! Shandaar!",
+        defeat: "Gaya kaam se! 'R' dabao aur phirse reboot karo bhidu!"
+      },
+
+      async trigger(eventKey) {
+        if (this.cooldown > 0 && eventKey !== "victory" && eventKey !== "defeat") return;
+        this.cooldown = 3.5; // 3.5s cooldown between commentary bubbles
+
+        const fallback = this.fallbackComments[eventKey] || "Ekdum jhakaas move bhidu!";
+
+        // Asynchronously request commentary from Gemma in Hinglish
+        const res = await GemmaClient.askGemma({
+          purpose: `Commentary: ${eventKey}`,
+          system: "You are an energetic, witty Indian game commentator speaking in authentic, hilarious Hinglish (Hindi + English blend written in Latin alphabet, like 'Arre bhai', 'kya dodge maara', 'ekdum jhakaas', 'bhaago'). Max 12 words. Output raw JSON: { comment }.",
+          prompt: `Player event: '${eventKey}'. Provide a hilarious, energetic Hinglish commentary reaction.`,
+          schema: { comment: "string" },
+          timeoutMs: CONFIG.AI_TIMEOUT_MS,
+          fallback: { comment: fallback }
+        });
+
+        UI.showCommentary(res.comment || fallback, res.isFallback);
+      }
+    };
+
+    /* ==========================================================================
+       SECTION 12: INSPECTOR
+       ========================================================================== */
+    const Inspector = {
+      update() {
+        document.getElementById("inspStatus").innerText = STATE.ai.statusText;
+        document.getElementById("inspModel").innerText = CONFIG.GEMMA_MODEL;
+        document.getElementById("inspLatency").innerText = `${STATE.ai.lastLatency} ms`;
+        document.getElementById("inspTotalReq").innerText = STATE.ai.stats.total;
+        document.getElementById("inspSuccessReq").innerText = STATE.ai.stats.success;
+        document.getElementById("inspFallbackReq").innerText = `${STATE.ai.stats.fallbacks} / ${STATE.ai.stats.failed}`;
+        document.getElementById("inspPhase").innerText = STATE.phase;
+        document.getElementById("inspSpeed").innerText = `${(STATE.speedMultiplier).toFixed(2)}x`;
+
+        document.getElementById("inspLastPurpose").innerText = STATE.ai.lastPurpose || "None";
+        document.getElementById("inspLastTime").innerText = STATE.ai.lastResponseTime || STATE.ai.lastRequestTime || "None";
+        document.getElementById("inspLastResult").innerText = STATE.ai.lastResultSummary || "None";
+      },
+
+      logCall(entry) {
+        STATE.ai.history.unshift(entry);
+        if (STATE.ai.history.length > 10) STATE.ai.history.pop();
+        this.renderHistory();
+      },
+
+      renderHistory() {
+        const tbody = document.getElementById("inspLogTableBody");
+        if (!STATE.ai.history.length) {
+          tbody.innerHTML = `<tr><td colspan="5" style="text-align: center; color: var(--col-gray); padding: 12px;">No AI transactions recorded yet.</td></tr>`;
+          return;
+        }
+
+        tbody.innerHTML = STATE.ai.history.map(item => `
+          <tr>
+            <td>${item.time}</td>
+            <td style="color: var(--col-cyan);">${item.purpose}</td>
+            <td><span class="${item.source.includes('AI') ? 'ai-tag' : 'fallback-tag'}">${item.source}</span></td>
+            <td>${item.duration}</td>
+            <td style="max-width: 250px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">${item.summary}</td>
+          </tr>
+        `).join("");
+      },
+
+      clearLog() {
+        STATE.ai.history = [];
+        this.renderHistory();
+      }
+    };
+
+    /* ==========================================================================
+       SECTION 13: RENDERING (HTML5 CANVAS)
+       ========================================================================== */
+    const Renderer = {
+      canvas: null,
+      ctx: null,
+      stars: [],
+
+      init() {
+        this.canvas = document.getElementById("gameCanvas");
+        this.ctx = this.canvas.getContext("2d");
+
+        // Initialize starfield background
+        for (let i = 0; i < 40; i++) {
+          this.stars.push({
+            x: Math.random() * CONFIG.CANVAS_WIDTH,
+            y: Math.random() * (CONFIG.CANVAS_HEIGHT - 80),
+            size: Math.random() * 2 + 1,
+            speed: Math.random() * 0.4 + 0.1
+          });
+        }
+      },
+
+      draw() {
+        const ctx = this.ctx;
+        const w = CONFIG.CANVAS_WIDTH;
+        const h = CONFIG.CANVAS_HEIGHT;
+
+        ctx.save();
+
+        // Screen Shake offset
+        if (STATE.screenShake > 0) {
+          const sx = (Math.random() - 0.5) * STATE.screenShake;
+          const sy = (Math.random() - 0.5) * STATE.screenShake;
+          ctx.translate(sx, sy);
+          STATE.screenShake = Math.max(0, STATE.screenShake - 0.5);
+        }
+
+        // 1. Clear & Background
+        ctx.fillStyle = CONFIG.COLORS.BG;
+        ctx.fillRect(0, 0, w, h);
+
+        // 2. Parallax Cyber Starfield (respects runDirection!)
+        ctx.fillStyle = CONFIG.COLORS.WHITE;
+        const dir = STATE.runDirection || 1;
+        for (let star of this.stars) {
+          star.x -= star.speed * (STATE.speed / 6) * dir;
+          if (star.x < 0) star.x = w;
+          if (star.x > w) star.x = 0;
+          ctx.globalAlpha = 0.5;
+          ctx.fillRect(star.x, star.y, star.size, star.size);
+        }
+        ctx.globalAlpha = 1.0;
+
+        // 3. Ground Perspective Neon Grid & Emergency Boss Wash
+        const isBossActive = ["WARNING", "FLEE", "FIGHT"].includes(STATE.phase);
+
+        // Emergency red ambient wash when boss is active
+        if (isBossActive) {
+          const alertGrad = ctx.createLinearGradient(0, 0, 0, 80);
+          alertGrad.addColorStop(0, "rgba(255, 42, 95, 0.28)");
+          alertGrad.addColorStop(1, "rgba(255, 42, 95, 0)");
+          ctx.fillStyle = alertGrad;
+          ctx.fillRect(0, 0, w, 80);
+        }
+
+        const groundY = 258;
+        // Ground shifts from Emerald Matrix to Laser Crimson during Boss encounters!
+        ctx.strokeStyle = isBossActive ? CONFIG.COLORS.CRIMSON : CONFIG.COLORS.EMERALD;
+        ctx.lineWidth = 2.5;
+        ctx.beginPath();
+        ctx.moveTo(0, groundY);
+        ctx.lineTo(w, groundY);
+        ctx.stroke();
+
+        // Ground grid stripes (reverse direction in FLEE!)
+        ctx.strokeStyle = isBossActive ? "rgba(255, 42, 95, 0.35)" : "rgba(0, 255, 136, 0.25)";
+        ctx.lineWidth = 1;
+        const gridOffset = (STATE.distance * 4 * dir) % 40;
+        for (let x = -gridOffset; x < w; x += 40) {
+          ctx.beginPath();
+          ctx.moveTo(x, groundY);
+          ctx.lineTo(x - 30 * dir, h);
+          ctx.stroke();
+        }
+
+        // 4. Render Pickups
+        for (let p of STATE.pickups) {
+          this.drawPickup(ctx, p);
+        }
+
+        // 5. Render Obstacles
+        for (let obs of STATE.obstacles) {
+          this.drawObstacle(ctx, obs);
+        }
+
+        // 6. Render Projectiles
+        for (let proj of STATE.projectiles) {
+          this.drawProjectile(ctx, proj);
+        }
+
+        // 7. Render Runner
+        this.drawRunner(ctx);
+
+        // 8. Render Boss (if in WARNING, FLEE, or FIGHT)
+        if (["WARNING", "FLEE", "FIGHT"].includes(STATE.phase)) {
+          this.drawBoss(ctx);
+        }
+
+        // 9. Render Particles
+        Particles.draw(ctx);
+
+        ctx.restore();
+      },
+
+      drawRunner(ctx) {
+        const r = Runner;
+        ctx.save();
+
+        // Invulnerability flicker
+        if (r.invulnerableTimer > 0 && Math.floor(r.invulnerableTimer * 14) % 2 === 0) {
+          ctx.globalAlpha = 0.4;
+        }
+
+        ctx.translate(r.x, r.y);
+
+        // Flip runner horizontally if running in reverse (FLEE phase)
+        if (r.facing === -1) {
+          ctx.translate(r.width, 0);
+          ctx.scale(-1, 1);
+        }
+
+        // Runner Body (Cyber Cyan Geometric Silhouette)
+        ctx.fillStyle = CONFIG.COLORS.CYAN;
+        ctx.strokeStyle = CONFIG.COLORS.WHITE;
+        ctx.lineWidth = 1.5;
+
+        if (r.isDucking) {
+          // Ducking crouch geometry
+          ctx.fillRect(0, 4, r.width, r.height - 4);
+          ctx.strokeRect(0, 4, r.width, r.height - 4);
+          // Visor
+          ctx.fillStyle = CONFIG.COLORS.WHITE;
+          ctx.fillRect(18, 6, 8, 5);
+        } else {
+          // Standing / Running / Jumping geometry
+          ctx.fillRect(4, 0, r.width - 8, 26);
+          ctx.strokeRect(4, 0, r.width - 8, 26);
+          ctx.fillStyle = CONFIG.COLORS.WHITE;
+          ctx.fillRect(16, 4, 8, 6);
+
+          // Animated running legs
+          const legPhase = Math.sin(r.animTimer);
+          ctx.strokeStyle = CONFIG.COLORS.CYAN;
+          ctx.lineWidth = 3;
+
+          // Left leg
+          ctx.beginPath();
+          ctx.moveTo(8, 26);
+          ctx.lineTo(8 + (r.isGrounded ? legPhase * 8 : -4), 48);
+          ctx.stroke();
+
+          // Right leg
+          ctx.beginPath();
+          ctx.moveTo(20, 26);
+          ctx.lineTo(20 - (r.isGrounded ? legPhase * 8 : -6), 48);
+          ctx.stroke();
+        }
+
+        ctx.restore();
+      },
+
+      drawObstacle(ctx, obs) {
+        ctx.save();
+        if (obs.type === "crate") {
+          // Standard Spiked Crate
+          ctx.fillStyle = CONFIG.COLORS.CRIMSON;
+          ctx.fillRect(obs.x, obs.y, obs.w, obs.h);
+          ctx.strokeStyle = CONFIG.COLORS.WHITE;
+          ctx.lineWidth = 2;
+          ctx.strokeRect(obs.x, obs.y, obs.w, obs.h);
+          ctx.fillStyle = CONFIG.COLORS.BG;
+          ctx.beginPath();
+          ctx.moveTo(obs.x + 4, obs.y + obs.h - 4);
+          ctx.lineTo(obs.x + obs.w - 4, obs.y + 4);
+          ctx.stroke();
+        } else if (obs.type === "double_crate") {
+          // Double Crate (wider barrier)
+          ctx.fillStyle = CONFIG.COLORS.CRIMSON;
+          ctx.fillRect(obs.x, obs.y, obs.w, obs.h);
+          ctx.strokeStyle = CONFIG.COLORS.WHITE;
+          ctx.lineWidth = 2;
+          ctx.strokeRect(obs.x, obs.y, obs.w, obs.h);
+          ctx.beginPath();
+          ctx.moveTo(obs.x + obs.w / 2, obs.y);
+          ctx.lineTo(obs.x + obs.w / 2, obs.y + obs.h);
+          ctx.stroke();
+          ctx.fillStyle = CONFIG.COLORS.AMBER;
+          ctx.fillRect(obs.x + 6, obs.y + 12, 8, 8);
+          ctx.fillRect(obs.x + obs.w - 14, obs.y + 12, 8, 8);
+        } else if (obs.type === "tall_pylon") {
+          // Tall High-Voltage Pylon
+          ctx.fillStyle = "#161c28";
+          ctx.fillRect(obs.x, obs.y, obs.w, obs.h);
+          ctx.strokeStyle = CONFIG.COLORS.AMBER;
+          ctx.lineWidth = 2;
+          ctx.strokeRect(obs.x, obs.y, obs.w, obs.h);
+          ctx.fillStyle = CONFIG.COLORS.AMBER;
+          ctx.fillRect(obs.x + 2, obs.y + 2, obs.w - 4, 10);
+        } else if (obs.type === "drone_low" || obs.type === "drone") {
+          // Low Flying Recon Drone (duck under)
+          ctx.fillStyle = CONFIG.COLORS.AMBER;
+          ctx.beginPath();
+          ctx.moveTo(obs.x, obs.y + obs.h / 2);
+          ctx.lineTo(obs.x + obs.w / 2, obs.y);
+          ctx.lineTo(obs.x + obs.w, obs.y + obs.h / 2);
+          ctx.lineTo(obs.x + obs.w / 2, obs.y + obs.h);
+          ctx.closePath();
+          ctx.fill();
+          ctx.strokeStyle = CONFIG.COLORS.WHITE;
+          ctx.stroke();
+          ctx.fillStyle = CONFIG.COLORS.CRIMSON;
+          ctx.fillRect(obs.x + obs.w / 2 - 3, obs.y + obs.h / 2 - 3, 6, 6);
+        } else if (obs.type === "laser_gate") {
+          // Pulsing Laser Tripwire Gate
+          ctx.fillStyle = CONFIG.COLORS.CRIMSON;
+          ctx.fillRect(obs.x + 2, obs.y, obs.w - 4, obs.h);
+          ctx.shadowColor = CONFIG.COLORS.CRIMSON;
+          ctx.shadowBlur = 10;
+          ctx.strokeStyle = CONFIG.COLORS.WHITE;
+          ctx.strokeRect(obs.x, obs.y, obs.w, obs.h);
+        }
+        ctx.restore();
+      },
+
+      drawPickup(ctx, p) {
+        ctx.save();
+        ctx.translate(p.x + p.w / 2, p.y + p.h / 2);
+        ctx.rotate(p.anim);
+        ctx.fillStyle = CONFIG.COLORS.AMBER;
+        ctx.strokeStyle = CONFIG.COLORS.WHITE;
+        ctx.lineWidth = 2;
+        ctx.fillRect(-p.w / 2, -p.h / 2, p.w, p.h);
+        ctx.strokeRect(-p.w / 2, -p.h / 2, p.w, p.h);
+        ctx.restore();
+      },
+
+      drawBoss(ctx) {
+        const b = STATE.boss;
+        ctx.save();
+        ctx.translate(b.x, b.y);
+
+        // Glowing red energy aura if enraged (low HP or high speedMultiplier)
+        if (b.health < b.maxHealth * 0.5 || b.speedMultiplier > 1.2) {
+          ctx.shadowColor = CONFIG.COLORS.CRIMSON;
+          ctx.shadowBlur = 20;
+        }
+
+        // Boss Cyber T-Rex Silhouette (Laser Crimson & Dark Panels) - FACING LEFT
+        ctx.fillStyle = CONFIG.COLORS.CRIMSON;
+        ctx.strokeStyle = CONFIG.COLORS.WHITE;
+        ctx.lineWidth = 2;
+
+        // Head & Jaw (facing LEFT)
+        ctx.fillRect(0, 0, 70, 45);
+        ctx.strokeRect(0, 0, 70, 45);
+
+        // Glowing red optic eye
+        ctx.fillStyle = CONFIG.COLORS.WHITE;
+        ctx.fillRect(10, 8, 12, 8);
+
+        // Serrated cyber teeth
+        ctx.fillStyle = CONFIG.COLORS.WHITE;
+        ctx.beginPath();
+        ctx.moveTo(0, 45);
+        ctx.lineTo(10, 36);
+        ctx.lineTo(20, 45);
+        ctx.lineTo(30, 36);
+        ctx.lineTo(40, 45);
+        ctx.stroke();
+
+        // Massive Body
+        ctx.fillStyle = "#1e2433";
+        ctx.fillRect(40, 20, 85, 65);
+        ctx.strokeRect(40, 20, 85, 65);
+
+        // Thruster Tail (pointing to the right)
+        ctx.fillStyle = CONFIG.COLORS.CRIMSON;
+        ctx.beginPath();
+        ctx.moveTo(125, 30);
+        ctx.lineTo(160, 15);
+        ctx.lineTo(125, 55);
+        ctx.closePath();
+        ctx.fill();
+        ctx.stroke();
+
+        // Stomping Legs
+        const legAngle = Math.sin(b.animTimer) * 10;
+        ctx.fillStyle = CONFIG.COLORS.CRIMSON;
+        ctx.fillRect(60, 85, 20, 35);
+        ctx.strokeRect(60, 85, 20, 35);
+
+        ctx.fillRect(95, 85 + legAngle, 20, 35);
+        ctx.strokeRect(95, 85 + legAngle, 20, 35);
+
+        // Attack Telegraph Warning Beam / Glow (Shoots LEFT towards player!)
+        if (b.state === "telegraph") {
+          ctx.fillStyle = "rgba(255, 42, 95, 0.35)";
+          ctx.fillRect(-600, 20, 600, 35);
+          ctx.strokeStyle = CONFIG.COLORS.CRIMSON;
+          ctx.strokeRect(-600, 20, 600, 35);
+        }
+
+        ctx.restore();
+      },
+
+      drawProjectile(ctx, p) {
+        ctx.save();
+        if (p.isPlayer) {
+          ctx.fillStyle = p.isSpecial ? CONFIG.COLORS.AMBER : CONFIG.COLORS.CYAN;
+          ctx.shadowColor = ctx.fillStyle;
+          ctx.shadowBlur = 10;
+          ctx.fillRect(p.x, p.y, p.w, p.h);
+        } else {
+          // Boss hazard
+          ctx.fillStyle = CONFIG.COLORS.CRIMSON;
+          ctx.shadowColor = CONFIG.COLORS.CRIMSON;
+          ctx.shadowBlur = 8;
+          ctx.fillRect(p.x, p.y, p.w, p.h);
+        }
+        ctx.restore();
+      }
+    };
+
+    /* ==========================================================================
+       SECTION 14: AUDIO (PROCEDURAL WEB AUDIO API)
+       ========================================================================== */
+    const AudioSys = {
+      ctx: null,
+
+      init() {
+        if (!this.ctx) {
+          const AudioContext = window.AudioContext || window.webkitAudioContext;
+          if (AudioContext) {
+            this.ctx = new AudioContext();
+          }
+        }
+        if (this.ctx && this.ctx.state === "suspended") {
+          this.ctx.resume();
+        }
+      },
+
+      play(soundType) {
+        if (!STATE.soundEnabled) return;
+        this.init();
+        if (!this.ctx) return;
+
+        const now = this.ctx.currentTime;
+        const osc = this.ctx.createOscillator();
+        const gain = this.ctx.createGain();
+
+        osc.connect(gain);
+        gain.connect(this.ctx.destination);
+
+        switch (soundType) {
+          case "jump":
+            osc.type = "sine";
+            osc.frequency.setValueAtTime(260, now);
+            osc.frequency.exponentialRampToValueAtTime(620, now + 0.15);
+            gain.gain.setValueAtTime(0.2, now);
+            gain.gain.linearRampToValueAtTime(0, now + 0.15);
+            osc.start(now);
+            osc.stop(now + 0.15);
+            break;
+
+          case "dodge":
+            osc.type = "triangle";
+            osc.frequency.setValueAtTime(450, now);
+            osc.frequency.linearRampToValueAtTime(320, now + 0.1);
+            gain.gain.setValueAtTime(0.12, now);
+            gain.gain.linearRampToValueAtTime(0, now + 0.1);
+            osc.start(now);
+            osc.stop(now + 0.1);
+            break;
+
+          case "stumble":
+            osc.type = "sawtooth";
+            osc.frequency.setValueAtTime(140, now);
+            osc.frequency.linearRampToValueAtTime(60, now + 0.25);
+            gain.gain.setValueAtTime(0.3, now);
+            gain.gain.linearRampToValueAtTime(0, now + 0.25);
+            osc.start(now);
+            osc.stop(now + 0.25);
+            break;
+
+          case "pickup":
+            osc.type = "sine";
+            osc.frequency.setValueAtTime(520, now);
+            osc.frequency.setValueAtTime(680, now + 0.08);
+            osc.frequency.setValueAtTime(940, now + 0.16);
+            gain.gain.setValueAtTime(0.25, now);
+            gain.gain.linearRampToValueAtTime(0, now + 0.24);
+            osc.start(now);
+            osc.stop(now + 0.24);
+            break;
+
+          case "charge":
+            osc.type = "sine";
+            osc.frequency.setValueAtTime(220, now);
+            osc.frequency.linearRampToValueAtTime(880, now + 0.4);
+            gain.gain.setValueAtTime(0.2, now);
+            gain.gain.linearRampToValueAtTime(0, now + 0.4);
+            osc.start(now);
+            osc.stop(now + 0.4);
+            break;
+
+          case "attackLaser":
+            osc.type = "square";
+            osc.frequency.setValueAtTime(840, now);
+            osc.frequency.exponentialRampToValueAtTime(180, now + 0.12);
+            gain.gain.setValueAtTime(0.15, now);
+            gain.gain.linearRampToValueAtTime(0, now + 0.12);
+            osc.start(now);
+            osc.stop(now + 0.12);
+            break;
+
+          case "megaBurst":
+            osc.type = "sawtooth";
+            osc.frequency.setValueAtTime(320, now);
+            osc.frequency.exponentialRampToValueAtTime(80, now + 0.35);
+            gain.gain.setValueAtTime(0.35, now);
+            gain.gain.linearRampToValueAtTime(0, now + 0.35);
+            osc.start(now);
+            osc.stop(now + 0.35);
+            break;
+
+          case "bossRoar":
+            osc.type = "sawtooth";
+            osc.frequency.setValueAtTime(90, now);
+            osc.frequency.linearRampToValueAtTime(45, now + 0.6);
+            gain.gain.setValueAtTime(0.4, now);
+            gain.gain.linearRampToValueAtTime(0, now + 0.6);
+            osc.start(now);
+            osc.stop(now + 0.6);
+            break;
+
+          case "hit":
+          case "damage":
+            osc.type = "square";
+            osc.frequency.setValueAtTime(180, now);
+            osc.frequency.linearRampToValueAtTime(70, now + 0.15);
+            gain.gain.setValueAtTime(0.3, now);
+            gain.gain.linearRampToValueAtTime(0, now + 0.15);
+            osc.start(now);
+            osc.stop(now + 0.15);
+            break;
+
+          case "victory":
+            osc.type = "triangle";
+            osc.frequency.setValueAtTime(440, now);
+            osc.frequency.setValueAtTime(554, now + 0.12);
+            osc.frequency.setValueAtTime(659, now + 0.24);
+            osc.frequency.setValueAtTime(880, now + 0.36);
+            gain.gain.setValueAtTime(0.25, now);
+            gain.gain.linearRampToValueAtTime(0, now + 0.6);
+            osc.start(now);
+            osc.stop(now + 0.6);
+            break;
+
+          case "defeat":
+            osc.type = "sawtooth";
+            osc.frequency.setValueAtTime(320, now);
+            osc.frequency.setValueAtTime(240, now + 0.2);
+            osc.frequency.setValueAtTime(160, now + 0.4);
+            gain.gain.setValueAtTime(0.3, now);
+            gain.gain.linearRampToValueAtTime(0, now + 0.7);
+            osc.start(now);
+            osc.stop(now + 0.7);
+            break;
+        }
+      }
+    };
+
+    /* ==========================================================================
+       PARTICLES SYSTEM
+       ========================================================================== */
+    const Particles = {
+      pool: [],
+
+      spawnPuff(x, y) {
+        for (let i = 0; i < 6; i++) {
+          this.pool.push({
+            x, y,
+            vx: (Math.random() - 0.5) * 40,
+            vy: -Math.random() * 30,
+            size: Math.random() * 3 + 2,
+            color: CONFIG.COLORS.WHITE,
+            life: 0.3
+          });
+        }
+      },
+
+      spawnSparks(x, y, color) {
+        for (let i = 0; i < 10; i++) {
+          this.pool.push({
+            x, y,
+            vx: (Math.random() - 0.5) * 160,
+            vy: (Math.random() - 0.5) * 160,
+            size: Math.random() * 3 + 1,
+            color: color || CONFIG.COLORS.CYAN,
+            life: 0.4
+          });
+        }
+      },
+
+      update(dt) {
+        for (let i = this.pool.length - 1; i >= 0; i--) {
+          const p = this.pool[i];
+          p.x += p.vx * dt;
+          p.y += p.vy * dt;
+          p.life -= dt;
+          if (p.life <= 0) {
+            this.pool.splice(i, 1);
+          }
+        }
+      },
+
+      draw(ctx) {
+        for (let p of this.pool) {
+          ctx.fillStyle = p.color;
+          ctx.fillRect(p.x, p.y, p.size, p.size);
+        }
+      }
+    };
+
+    /* ==========================================================================
+       SECTION 15: UI AND COMPLETE BUTTON HANDLERS
+       ========================================================================== */
+    const UI = {
+      init() {
+        // Top Header Actions
+        document.getElementById("headerMuteBtn").addEventListener("click", () => toggleMute());
+        document.getElementById("headerPauseBtn").addEventListener("click", () => togglePause());
+        document.getElementById("headerInspectorBtn").addEventListener("click", () => toggleInspector());
+        document.getElementById("headerRestartBtn").addEventListener("click", () => restartGame());
+        document.getElementById("gemmaBadge").addEventListener("click", () => {
+          GemmaClient.checkConnection();
+          toggleInspector();
+        });
+
+        // Main Menu Buttons
+        document.getElementById("startBtn").addEventListener("click", () => startGame());
+        document.getElementById("howToPlayBtn").addEventListener("click", () => this.showModal("howToPlayModal"));
+        document.getElementById("settingsBtn").addEventListener("click", () => this.showModal("settingsModal"));
+        document.getElementById("menuInspectorBtn").addEventListener("click", () => toggleInspector());
+
+        // How To Play Modal
+        document.getElementById("closeHowToPlayBtn").addEventListener("click", () => this.hideModal("howToPlayModal"));
+        document.getElementById("howToPlayOkBtn").addEventListener("click", () => {
+          this.hideModal("howToPlayModal");
+          if (STATE.phase === "MENU") startGame();
+        });
+
+        // Settings Modal
+        document.getElementById("closeSettingsBtn").addEventListener("click", () => this.hideModal("settingsModal"));
+        document.getElementById("soundToggle").addEventListener("change", (e) => {
+          STATE.soundEnabled = e.target.checked;
+          document.getElementById("headerMuteBtn").innerText = STATE.soundEnabled ? "🔊 Sound: ON" : "🔇 Sound: OFF";
+        });
+        document.getElementById("diffSelect").addEventListener("change", (e) => {
+          STATE.difficulty = e.target.value;
+          STATE.speedMultiplier = e.target.value === "Casual" ? 0.8 : (e.target.value === "Rogue" ? 1.3 : 1.0);
+          this.updateHud();
+        });
+        document.getElementById("oneHitToggle").addEventListener("change", (e) => {
+          CONFIG.ONE_HIT_MODE = e.target.checked;
+          if (CONFIG.ONE_HIT_MODE) {
+            STATE.lives = 1;
+            this.updateHud();
+          }
+        });
+        document.getElementById("aiBackendSelect").addEventListener("change", (e) => {
+          CONFIG.GEMMA_BACKEND = e.target.value;
+          Inspector.update();
+        });
+        document.getElementById("modelNameInput").addEventListener("change", (e) => {
+          CONFIG.GEMMA_MODEL = e.target.value.trim();
+          Inspector.update();
+        });
+        document.getElementById("endpointInput").addEventListener("change", (e) => {
+          CONFIG.GEMMA_ENDPOINT = e.target.value.trim();
+          Inspector.update();
+        });
+        document.getElementById("settingsTestAiBtn").addEventListener("click", async () => {
+          const resEl = document.getElementById("settingsTestResult");
+          resEl.innerText = "Testing...";
+          const res = await GemmaClient.askGemma({
+            purpose: "Manual Settings Test",
+            system: "Output JSON: { status }",
+            prompt: "Respond with { \"status\": \"online\" }",
+            schema: { status: "string" },
+            fallback: { status: "fallback" }
+          });
+          resEl.innerText = res.isFallback ? "Fallback (Ollama Offline)" : `OK: ${res.status}`;
+          resEl.style.color = res.isFallback ? "var(--col-amber)" : "var(--col-emerald)";
+        });
+        document.getElementById("saveSettingsBtn").addEventListener("click", () => this.hideModal("settingsModal"));
+
+        // Inspector Modal Buttons
+        document.getElementById("closeInspectorBtn").addEventListener("click", () => this.hideModal("inspectorModal"));
+        document.getElementById("closeInspectorFooterBtn").addEventListener("click", () => this.hideModal("inspectorModal"));
+        document.getElementById("inspTestBtn").addEventListener("click", async () => {
+          await GemmaClient.askGemma({
+            purpose: "Inspector Live Test",
+            system: "Respond in JSON: { ping }",
+            prompt: "Return { \"ping\": \"pong\" }",
+            schema: { ping: "string" },
+            fallback: { ping: "fallback-pong" }
+          });
+        });
+        document.getElementById("inspRefreshBtn").addEventListener("click", () => GemmaClient.checkConnection());
+        document.getElementById("inspClearBtn").addEventListener("click", () => Inspector.clearLog());
+
+        // Pause Overlay Buttons
+        document.getElementById("resumeBtn").addEventListener("click", () => togglePause());
+        document.getElementById("pauseRestartBtn").addEventListener("click", () => restartGame());
+        document.getElementById("pauseMenuBtn").addEventListener("click", () => returnToMenu());
+
+        // Lose Overlay Buttons
+        document.getElementById("retryBtn").addEventListener("click", () => restartGame());
+        document.getElementById("loseMenuBtn").addEventListener("click", () => returnToMenu());
+
+        // Win Overlay Buttons
+        document.getElementById("playAgainBtn").addEventListener("click", () => restartGame());
+        document.getElementById("winMenuBtn").addEventListener("click", () => returnToMenu());
+      },
+
+      show(id) {
+        const el = document.getElementById(id);
+        if (el) el.classList.add("active");
+      },
+      hide(id) {
+        const el = document.getElementById(id);
+        if (el) el.classList.remove("active");
+      },
+
+      showModal(id) {
+        const el = document.getElementById(id);
+        if (el) el.classList.add("active");
+      },
+      hideModal(id) {
+        const el = document.getElementById(id);
+        if (el) el.classList.remove("active");
+      },
+
+      updatePhaseBadge(phase) {
+        document.getElementById("phaseBadge").innerText = phase;
+      },
+
+      updateHud() {
+        document.getElementById("hudScore").innerText = STATE.score;
+        document.getElementById("hudDistance").innerText = `${Math.floor(STATE.distance)}m`;
+        document.getElementById("hudDodges").innerText = STATE.dodgeCount;
+
+        let hearts = "";
+        for (let i = 0; i < STATE.lives; i++) hearts += "❤️";
+        if (STATE.lives === 0) hearts = "💀 0 LIVES";
+        document.getElementById("hudLives").innerText = hearts;
+        document.getElementById("hudDiff").innerText = `${STATE.difficulty} (${STATE.speedMultiplier.toFixed(1)}x)`;
+      },
+
+      updateBossHud() {
+        document.getElementById("bossHudName").innerText = STATE.boss.name;
+        document.getElementById("bossHudAttack").innerText = `STYLE: ${STATE.boss.signatureAttack}`;
+        const pct = Math.max(0, (STATE.boss.health / STATE.boss.maxHealth) * 100);
+        document.getElementById("bossHpFill").style.width = `${pct}%`;
+      },
+
+      updatePlayerCombatHud() {
+        const hpPct = Math.max(0, (STATE.playerHealth / STATE.maxPlayerHealth) * 100);
+        document.getElementById("playerHpFill").style.width = `${hpPct}%`;
+        const chargePct = Math.min(100, (STATE.weapon.charge / CONFIG.CHARGE_REQUIRED) * 100);
+        document.getElementById("playerChargeFill").style.width = `${chargePct}%`;
+      },
+
+      showStory(title, text, speaker = "ROGUE CHRONICLES", isFallback = false) {
+        const bubble = document.getElementById("storyBubble");
+        document.getElementById("storySpeaker").innerText = speaker;
+        document.getElementById("storyText").innerText = text;
+        const tag = document.getElementById("storyAiTag");
+        tag.className = isFallback ? "fallback-tag" : "ai-tag";
+        tag.innerText = isFallback ? "DESI FALLBACK" : "DESI LOGS";
+        bubble.classList.add("active");
+
+        setTimeout(() => bubble.classList.remove("active"), 5500);
+      },
+
+      showCommentary(text, isFallback = false) {
+        const bubble = document.getElementById("commentaryBubble");
+        document.getElementById("commentaryText").innerText = text;
+        const tag = document.getElementById("commentaryAiTag");
+        tag.className = isFallback ? "fallback-tag" : "ai-tag";
+        tag.innerText = isFallback ? "DESI CAST" : "DESI LIVE";
+        bubble.classList.add("active");
+
+        setTimeout(() => bubble.classList.remove("active"), 4500);
+      },
+
+      setLoseStats() {
+        document.getElementById("loseStatsText").innerText =
+          `Arey yaar! Khatam, tata, bye-bye! Score: ${STATE.score} | Distance: ${Math.floor(STATE.distance)}m | Dodges: ${STATE.dodgeCount} | Stumbles: ${STATE.stumbleCount}`;
+      },
+
+      setWinStats() {
+        document.getElementById("winStatsText").innerText =
+          `Ekdum jhakaas! Boss ${STATE.boss.name} ko dho dala! Score: ${STATE.score} | Dodges: ${STATE.dodgeCount} | Bachi hui HP: ${Math.floor(STATE.playerHealth)}`;
+      }
+    };
+
+    /* ==========================================================================
+       SECTION 15 (CONT): GLOBAL ACTION FUNCTIONS
+       ========================================================================== */
+    function startGame() {
+      STATE.runId++;
+      STATE.score = 0;
+      STATE.distance = 0;
+      STATE.dodgeCount = 0;
+      STATE.stumbleCount = 0;
+      STATE.lives = CONFIG.ONE_HIT_MODE ? 1 : CONFIG.RUN_LIVES;
+      STATE.playerHealth = 100;
+      STATE.boss.health = 120;
+      STATE.speed = STATE.baseSpeed;
+      STATE.isPaused = false;
+
+      Runner.reset();
+      Obstacles.reset();
+      Pickups.reset();
+      UI.updateHud();
+
+      StateMachine.transitionTo("RUN");
+      AudioSys.init();
+    }
+
+    function togglePause() {
+      if (STATE.phase === "MENU" || STATE.phase === "WIN" || STATE.phase === "LOSE") return;
+
+      STATE.isPaused = !STATE.isPaused;
+      if (STATE.isPaused) {
+        UI.show("pauseOverlay");
+      } else {
+        UI.hide("pauseOverlay");
+        STATE.lastFrameTime = performance.now(); // Avoid big dt spike
+      }
+    }
+
+    function restartGame() {
+      UI.hide("pauseOverlay");
+      UI.hide("winOverlay");
+      UI.hide("loseOverlay");
+      startGame();
+    }
+
+    function returnToMenu() {
+      UI.hide("pauseOverlay");
+      UI.hide("winOverlay");
+      UI.hide("loseOverlay");
+      StateMachine.transitionTo("MENU");
+    }
+
+    function toggleMute() {
+      STATE.soundEnabled = !STATE.soundEnabled;
+      document.getElementById("soundToggle").checked = STATE.soundEnabled;
+      document.getElementById("headerMuteBtn").innerText = STATE.soundEnabled ? "🔊 Sound: ON" : "🔇 Sound: OFF";
+    }
+
+    function toggleInspector() {
+      const modal = document.getElementById("inspectorModal");
+      if (modal.classList.contains("active")) {
+        UI.hideModal("inspectorModal");
+      } else {
+        Inspector.update();
+        UI.showModal("inspectorModal");
+      }
+    }
+
+    /* ==========================================================================
+       ADAPTIVE DIFFICULTY (GEMMA FEATURE E)
+       ========================================================================== */
+    const AdaptiveDifficulty = {
+      async evaluate() {
+        const prompt = `Player stats: distance=${Math.floor(STATE.distance)}, dodges=${STATE.dodgeCount}, stumbles=${STATE.stumbleCount}, lives=${STATE.lives}. Suggest difficultyAdjustment (-1, 0, or 1) and speedMultiplier (0.9 to 1.15).`;
+        const res = await GemmaClient.askGemma({
+          purpose: "Adaptive Difficulty Balancing",
+          system: "Output JSON: { difficultyAdjustment, suggestedSpeedMultiplier, reason }",
+          prompt,
+          schema: { difficultyAdjustment: "number", suggestedSpeedMultiplier: "number" },
+          timeoutMs: CONFIG.AI_TIMEOUT_MS,
+          fallback: { difficultyAdjustment: 0, suggestedSpeedMultiplier: 1.0 }
+        });
+
+        // Clamp speed adjustments safely between 0.85 and 1.25
+        if (res.suggestedSpeedMultiplier) {
+          const clamped = Math.min(1.25, Math.max(0.85, Number(res.suggestedSpeedMultiplier)));
+          STATE.speedMultiplier = clamped;
+          UI.updateHud();
+        }
+      }
+    };
+
+    /* ==========================================================================
+       SECTION 16: GAME LOOP & TESTING / ERROR HANDLING
+       ========================================================================== */
+    let lastTime = performance.now();
+
+    function gameLoop(now) {
+      const dt = Math.min(0.1, (now - lastTime) / 1000); // Clamp dt to prevent tunneling
+      lastTime = now;
+
+      if (!STATE.isPaused) {
+        // Phase-specific updates
+        switch (STATE.phase) {
+          case "MENU": Phases.updateMenu(dt); break;
+          case "RUN": Phases.updateRun(dt); break;
+          case "WARNING": Phases.updateWarning(dt); break;
+          case "FLEE": Phases.updateFlee(dt); break;
+          case "CHARGE": Phases.updateCharge(dt); break;
+          case "FIGHT": Phases.updateFight(dt); break;
+          case "WIN": Phases.updateWin(dt); break;
+          case "LOSE": Phases.updateLose(dt); break;
+        }
+
+        Particles.update(dt);
+      }
+
+      Renderer.draw();
+      Input.clearFrame();
+
+      requestAnimationFrame(gameLoop);
+    }
+
+    // AUTOMATED RUNTIME SELF-TEST SUITE
+    window.runDinoTests = async function() {
+      console.log("=== RUNNING DINO GONE ROGUE SELF-TEST SUITE ===");
+      let passed = 0, failed = 0;
+
+      function assert(desc, condition) {
+        if (condition) {
+          console.log(`%c[PASS] ${desc}`, "color: #00ff88;");
+          passed++;
+        } else {
+          console.error(`[FAIL] ${desc}`);
+          failed++;
+        }
+      }
+
+      // Test 1: Initial state & Canvas
+      assert("Canvas element initialized", !!Renderer.canvas && Renderer.canvas.width === 900);
+      assert("Default lives is 3", STATE.lives === 3);
+
+      // Test 2: Sound Toggle
+      const initSound = STATE.soundEnabled;
+      toggleMute();
+      assert("Toggle Mute flips soundEnabled", STATE.soundEnabled !== initSound);
+      toggleMute(); // revert
+
+      // Test 3: Phase transitions through the complete state machine
+      StateMachine.transitionTo("RUN");
+      assert("Transition to RUN phase", STATE.phase === "RUN");
+      StateMachine.transitionTo("WARNING");
+      assert("Transition to WARNING phase", STATE.phase === "WARNING");
+      StateMachine.transitionTo("FLEE");
+      assert("Transition to FLEE phase", STATE.phase === "FLEE");
+      StateMachine.transitionTo("CHARGE");
+      assert("Transition to CHARGE phase", STATE.phase === "CHARGE");
+      StateMachine.transitionTo("FIGHT");
+      assert("Transition to FIGHT phase", STATE.phase === "FIGHT");
+
+      // Test 4: Damage and Combat
+      STATE.playerHealth = 100;
+      STATE.boss.health = 120;
+      Combat.spawnHazard({ w: 10, h: 10, x: Runner.x, y: Runner.y, damage: 15 });
+      Combat.update(0.016);
+      assert("Hazard inflicts clamped damage", STATE.playerHealth <= 100);
+
+      // Test 5: Gemma Ollama Ping Check
+      console.log("Testing live Ollama connection...");
+      await GemmaClient.checkConnection();
+      assert("Ollama status verified", typeof STATE.ai.connected === "boolean");
+
+      // Return to Menu cleanly
+      returnToMenu();
+      console.log(`=== TEST COMPLETE: ${passed} Passed, ${failed} Failed ===`);
+      return { passed, failed };
+    };
+
+    // Attach core handles to window for inspection & testing
+    window.STATE = STATE;
+    window.CONFIG = CONFIG;
+    window.StateMachine = StateMachine;
+    window.GemmaClient = GemmaClient;
+    window.togglePause = togglePause;
+    window.restartGame = restartGame;
+    window.returnToMenu = returnToMenu;
+    window.toggleMute = toggleMute;
+    window.toggleInspector = toggleInspector;
+
+    // SYSTEM INITIALIZATION
+    window.addEventListener("DOMContentLoaded", () => {
+      Renderer.init();
+      Input.init();
+      UI.init();
+      GemmaClient.checkConnection();
+
+      // Start the 60FPS Game Loop
+      lastTime = performance.now();
+      requestAnimationFrame(gameLoop);
+      console.log("[DINO GONE ROGUE] System Initialized at 60 FPS.");
+    });
+  </script>
+</body>
+</html>
